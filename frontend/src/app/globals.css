@@ -428,6 +428,125 @@ select {
   animation: enter var(--spring-move) var(--spring) backwards;
 }
 
+/*
+  Landing page motion. Marketing surface, seen rarely, so it may explain and delight; nothing loops.
+  - On load: hero content rises in a 60ms stagger and the sunrise glow lifts once.
+  - On scroll: sections, grids (staggered), drawings and the pipeline line are driven by the scroll
+    position itself (no JS, scrubbable both ways). Where scroll timelines are unsupported, or the
+    user prefers reduced motion, everything is simply shown at rest.
+*/
+@keyframes sunrise {
+  from {
+    opacity: 0;
+    transform: translateY(18%) scale(0.85);
+  }
+}
+@keyframes wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+@keyframes fall {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+}
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  .stagger > * {
+    animation: enter 700ms var(--spring) backwards;
+  }
+  .stagger > :nth-child(2) { animation-delay: 60ms; }
+  .stagger > :nth-child(3) { animation-delay: 120ms; }
+  .stagger > :nth-child(4) { animation-delay: 180ms; }
+  .stagger > :nth-child(5) { animation-delay: 240ms; }
+  .stagger > :nth-child(6) { animation-delay: 300ms; }
+  .sunrise {
+    animation: sunrise 1400ms var(--spring) 150ms backwards;
+  }
+
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: enter linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+
+    /* Items in one row share their row's timeline, offset so they arrive one after another. */
+    .reveal-group {
+      view-timeline: --group block;
+    }
+    .reveal-group > * {
+      animation: enter linear both;
+      animation-timeline: --group;
+      animation-range: entry 5% entry 55%;
+    }
+    .reveal-group > :nth-child(2) { animation-range: entry 12% entry 62%; }
+    .reveal-group > :nth-child(3) { animation-range: entry 19% entry 69%; }
+    .reveal-group > :nth-child(4) { animation-range: entry 26% entry 76%; }
+    .reveal-group > :nth-child(5) { animation-range: entry 33% entry 83%; }
+    .reveal-group > :nth-child(6) { animation-range: entry 40% entry 90%; }
+
+    /* Pipeline: the connector fills left to right and each step pops in as it is reached. */
+    .pipeline {
+      view-timeline: --pipeline block;
+    }
+    .pipeline-line {
+      transform-origin: left;
+      animation: grow-x linear both;
+      animation-timeline: --pipeline;
+      animation-range: entry 40% cover 50%;
+    }
+    .pipeline > li {
+      animation: pop linear both;
+      animation-timeline: --pipeline;
+    }
+    .pipeline > li:nth-of-type(1) { animation-range: entry 40% entry 70%; }
+    .pipeline > li:nth-of-type(2) { animation-range: entry 55% entry 85%; }
+    .pipeline > li:nth-of-type(3) { animation-range: entry 70% entry 100%; }
+    .pipeline > li:nth-of-type(4) { animation-range: entry 85% cover 45%; }
+    .pipeline > li:nth-of-type(5) { animation-range: entry 100% cover 50%; }
+
+    /* Drawings: price lines and routes draw on, raindrops fall, as each card scrolls in. */
+    .draw {
+      animation: wipe linear both;
+      animation-timeline: view();
+      animation-range: entry 40% cover 45%;
+    }
+    .rain > * {
+      animation: fall linear both;
+      animation-timeline: view();
+      animation-range: entry 40% cover 40%;
+    }
+    .rain > :nth-child(2) { animation-range: entry 50% cover 44%; }
+    .rain > :nth-child(3) { animation-range: entry 45% cover 42%; }
+    .rain > :nth-child(4) { animation-range: entry 55% cover 46%; }
+
+    /* Closing: the sun rises as the last section scrolls up. */
+    .sun-scroll {
+      animation: sunrise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 60%;
+    }
+  }
+}
+
 /* Toast: enters and leaves along the same path (up from, and back down to, the bottom). */
 @utility toast {
   transition:

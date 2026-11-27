@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "KHETNITI · खेतनीति",
     short_name: "KHETNITI",
     description: "Smart Decisions. Better Harvests. Weather, mandi prices and selling economics for Indian farmers.",
-    start_url: "/",
+    start_url: "/dashboard",
     display: "standalone",
     background_color: "#0d3b2b",
     theme_color: "#0d3b2b",

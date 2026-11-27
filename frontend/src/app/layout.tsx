@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Hind, Inter, Sora } from "next/font/google";
-import { AppProvider } from "@/components/AppContext";
-import { Shell } from "@/components/Shell";
 import { Splash } from "@/components/Splash";
 import "./globals.css";
 
@@ -43,9 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body>
         <Splash />
-        <AppProvider>
-          <Shell>{children}</Shell>
-        </AppProvider>
+        {children}
       </body>
     </html>
   );
