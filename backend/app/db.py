@@ -1,3 +1,5 @@
+from urllib.parse import quote, unquote
+
 from sqlalchemy import (
     Boolean,
     Column,
@@ -18,11 +20,23 @@ from .config import settings
 
 
 def normalize_database_url(url: str) -> str:
-    """Supabase shows `postgresql://...`, which SQLAlchemy maps to psycopg2; this app installs psycopg 3."""
+    """Make a PostgreSQL URL usable exactly as copied from Supabase.
+
+    - `postgresql://` maps to psycopg2 in SQLAlchemy; this app installs psycopg 3.
+    - A password pasted with a raw `@`, `#`, `/` ... would be split into the host name, so the
+      password (everything before the last `@`) is percent-encoded. Already-encoded ones stay as is.
+    """
     for prefix in ("postgresql://", "postgres://"):
         if url.startswith(prefix):
-            return "postgresql+psycopg://" + url[len(prefix) :]
-    return url
+            url = "postgresql+psycopg://" + url[len(prefix) :]
+    if not url.startswith("postgresql+psycopg://") or "@" not in url:
+        return url
+    scheme, rest = url.split("://", 1)
+    credentials, host = rest.rsplit("@", 1)
+    if ":" not in credentials:
+        return url
+    user, password = credentials.split(":", 1)
+    return f"{scheme}://{user}:{quote(unquote(password), safe='')}@{host}"
 
 
 DATABASE_URL = normalize_database_url(settings.database_url)

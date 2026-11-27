@@ -13,6 +13,11 @@ from app.main import app
         ("postgres://u:p@host/db", "postgresql+psycopg://u:p@host/db"),
         ("postgresql+psycopg://u:p@host/db", "postgresql+psycopg://u:p@host/db"),
         ("sqlite:///khetniti.db", "sqlite:///khetniti.db"),
+        # a raw '@' (or other reserved character) in the password, pasted unencoded
+        ("postgresql://postgres.ref:p@ss#1@aws-0-x.pooler.supabase.com:5432/postgres",
+         "postgresql+psycopg://postgres.ref:p%40ss%231@aws-0-x.pooler.supabase.com:5432/postgres"),
+        # already encoded: left as is
+        ("postgresql://postgres.ref:p%40ss@host:5432/postgres", "postgresql+psycopg://postgres.ref:p%40ss@host:5432/postgres"),
     ],
 )
 def test_supabase_urls_use_the_installed_psycopg_driver(url, expected):
