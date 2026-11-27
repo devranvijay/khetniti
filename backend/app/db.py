@@ -13,10 +13,8 @@ from sqlalchemy import (
     UniqueConstraint,
     create_engine,
 )
-from sqlalchemy.pool import NullPool
 
 from .config import settings
-
 
 
 def normalize_database_url(url: str) -> str:
@@ -28,12 +26,25 @@ def normalize_database_url(url: str) -> str:
 
 
 DATABASE_URL = normalize_database_url(settings.database_url)
+POOL_SIZE = 2
+POOL_OVERFLOW = 3
+POOL_RECYCLE_SECONDS = 300
 if DATABASE_URL.startswith("sqlite"):
     engine = create_engine(DATABASE_URL, future=True, pool_pre_ping=True, connect_args={"check_same_thread": False})
 else:
-    # Serverless (Vercel): hold no pool inside the function; Supabase's pooler does the pooling. Its
-    # transaction mode cannot keep prepared statements, so psycopg's automatic preparing is off.
-    engine = create_engine(DATABASE_URL, future=True, poolclass=NullPool, connect_args={"prepare_threshold": None})
+    # Opening a connection to Supabase costs a TLS handshake and login (seconds over a long route), far
+    # more than a query, so a small pool is kept and reused: Vercel's Fluid compute serves many requests
+    # from one instance. Small sizes stay inside Supabase's pooler limits; recycling drops idle
+    # connections before the pooler does. Prepared statements are off for the pooler's transaction mode.
+    engine = create_engine(
+        DATABASE_URL,
+        future=True,
+        pool_size=POOL_SIZE,
+        max_overflow=POOL_OVERFLOW,
+        pool_pre_ping=True,
+        pool_recycle=POOL_RECYCLE_SECONDS,
+        connect_args={"prepare_threshold": None},
+    )
 metadata = MetaData()
 
 # One row per (date, commodity, market). Varieties are averaged at ingest.
@@ -73,3 +84,17 @@ decisions = Table(
 
 def init_db() -> None:
     metadata.create_all(engine)
+    if engine.dialect.name == "postgresql":
+        _close_supabase_data_api()
+
+
+def _close_supabase_data_api() -> None:
+    """Only this backend reads and writes these tables. On Supabase, the public Data API roles (anon,
+    authenticated) get table grants by default, and RLS does not stop TRUNCATE, so RLS is enabled and
+    the grants are revoked. The backend's own role owns the tables and is unaffected."""
+    with engine.begin() as conn:
+        api_roles = [r for (r,) in conn.exec_driver_sql("select rolname from pg_roles where rolname in ('anon', 'authenticated')")]
+        for table in metadata.sorted_tables:
+            conn.exec_driver_sql(f'alter table "{table.name}" enable row level security')
+            if api_roles:
+                conn.exec_driver_sql(f'revoke all on table "{table.name}" from {", ".join(api_roles)}')
