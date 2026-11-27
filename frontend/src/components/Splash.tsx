@@ -5,14 +5,12 @@ import { BrandLogo } from "./Brand";
 
 const SEEN_KEY = "khetniti.splash";
 const MOBILE_QUERY = "(max-aspect-ratio: 1/1)";
-const MOBILE_MIN_MS = 2000; // the mobile clip is a 1 s loop; play it twice
 const HARD_CAP_MS = 4500;
 
 /**
  * Brand splash, shown once per browser session on a full page load.
- * Desktop / landscape: plays the 2 s intro once. Mobile / portrait: loops the 1 s clip until the
- * page has loaded (at least two loops). Tap or press any key to skip. Reduced motion shows the
- * static vertical logo briefly instead of the video.
+ * Plays its intro clip once (the portrait clip on phones, the landscape one elsewhere), then fades.
+ * Tap or press any key to skip. Reduced motion shows the static vertical logo briefly instead.
  */
 export function Splash() {
   const [state, setState] = useState<"showing" | "leaving" | "gone">("showing");
@@ -51,17 +49,10 @@ export function Splash() {
     const video = videoRef.current;
     const mobile = window.matchMedia(MOBILE_QUERY).matches;
     if (video) {
+      // Each clip plays exactly once. (Looping the short mobile clip read as two different videos.)
       video.src = mobile ? "/splash/splash-mobile.mp4" : "/splash/splash-desktop.mp4";
-      video.loop = mobile;
       video.onerror = () => leave();
-      if (mobile) {
-        const start = performance.now();
-        const finish = () => timers.push(window.setTimeout(leave, Math.max(0, MOBILE_MIN_MS - (performance.now() - start))));
-        if (document.readyState === "complete") finish();
-        else window.addEventListener("load", finish, { once: true });
-      } else {
-        video.onended = () => timers.push(window.setTimeout(leave, 200));
-      }
+      video.onended = () => timers.push(window.setTimeout(leave, 200));
       video.play().catch((e: DOMException) => {
         if (e.name !== "AbortError") leave(); // AbortError = superseded by a newer load, not a failure
       });
