@@ -1,0 +1,67 @@
+# KHETNITI · खेतनीति
+
+**Smart Decisions. Better Harvests.** An agricultural decision-support system for Indian farmers that connects weather, mandi prices and selling costs. Built for TECH HEIST 2026.
+
+Launch scope: Nashik district (5 talukas, 8 mandis); crops: tomato, onion and potato.
+
+## Pages
+
+| Page | What it does |
+|---|---|
+| Dashboard | Today's selling outlook, current weather, 3-day harvest risk, local and best mandi, 7-day forecast, 30-day price trend |
+| Harvest Intelligence | 7-day forecast, Low / Moderate / High risk per day with the rule that fired, suggested actions per crop, longest low-risk window |
+| Mandi Intelligence | Min / modal / max price, arrivals, 7-day change, distance and price date for every mandi; history charts (1M–1Y); min–max band with arrivals |
+| Smart Sell Advisor | Net revenue at every mandi after transport, handling and fees; wait scenarios with an 80% range; recommendation with reasons, confidence and a line-by-line calculation |
+| Decision Replay | Re-run the advisor on any past date using only data available that day, then score it against actual prices. Backtest a whole period against "always sell locally". Includes a look-ahead check |
+| Reports & Insights | Saved decisions, replay hit rate, data-source status, print / save as PDF |
+
+## Run it
+
+```bash
+# Backend (Python 3.11+)
+cd backend
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cp .env.example .env                          # optional: add DATA_GOV_IN_API_KEY
+.venv/bin/python -m scripts.generate_demo_data   # seeds the DEMO price dataset
+.venv/bin/uvicorn app.main:app --port 8000
+
+# Frontend (Node 20+)
+cd frontend
+npm install
+npm run dev                                   # http://localhost:3000
+```
+
+The frontend calls `http://localhost:8000` by default. To change that, set `NEXT_PUBLIC_API_URL`.
+
+Tests: `cd backend && .venv/bin/python -m pytest`. They cover the revenue formulas, risk rules, and a look-ahead test: it triples every price after the replay date and asserts the recommendation does not change.
+
+## Data and honesty rules
+
+| Source | Used for | Status |
+|---|---|---|
+| AGMARKNET via data.gov.in API | Daily min/max/modal mandi prices | Live when `DATA_GOV_IN_API_KEY` is set (refreshed at most hourly) |
+| AGMARKNET CSV export | Real price history and arrivals | `python -m scripts.import_agmarknet_csv file.csv --crop onion` |
+| Open-Meteo Forecast API | 7-day weather | Live, no key needed |
+| IMD, e-NAM | Official forecasts, extra market data | No open API, so not integrated |
+| KHETNITI demo dataset | Synthetic prices so the app works offline | Only when no real data is loaded |
+
+- **Demo data is never shown as live.** Every price view shows a `LIVE`, `REAL · HISTORICAL` or `DEMO DATA` badge with the source name and timestamps. Real and demo rows are stored separately and never mixed in one response. Real data replaces the demo set automatically: as soon as one real price is loaded for live views, and from 60 days of real history for charts and replay.
+- **No look-ahead.** Every price query accepts a cutoff date, and the advisor used by Replay reads only rows dated on or before the replay date. Later prices are loaded separately and only to score the decision.
+- **Transparent maths.** Gross = saleable quantity × modal price. Net = Gross − transport − handling − market fee − storage. Wait scenarios carry forward half of the recent 21-day trend, with a band based on recent volatility. All assumptions are editable in the UI.
+- **No guarantees.** Results are framed as estimates, and the app never claims weather can show crop maturity.
+- **Failures are handled.** If the weather service is down, the last forecast is served marked `STALE`. Prices older than 7 days are flagged and excluded from recommendations. API keys stay on the server.
+
+## Stack
+
+Next.js 16 · TypeScript · Tailwind CSS 4 · Recharts. Python · FastAPI · Pandas · NumPy · SQLAlchemy, with PostgreSQL via `DATABASE_URL` and SQLite as the local default.
+
+The UI follows Apple's Human Interface Guidelines: system font, grouped backgrounds, translucent sidebar, toolbar and tab bar, segmented controls, inset grouped lists, system colours for status, and automatic dark mode. It is tinted with the KHETNITI brand palette. Brand assets are in `KHETNITI Brand Identity-png/`.
+
+## Demo flow (from the PRD)
+
+1. Pick **Tomato** and **Nashik** in the toolbar. The Dashboard shows the farmer's day at a glance.
+2. **Harvest Intelligence**: risk level, the rules behind it, and what to do.
+3. **Mandi Intelligence**: compare mandis and price history.
+4. **Smart Sell Advisor**: enter quantity and transport cost, then tap *Get recommendation*.
+5. **Decision Replay**: pick a past date and replay it. Point out the look-ahead check. Then switch to *Backtest a period*.
+6. **Reports & Insights**: saved decisions and the data-sources panel.

@@ -1,0 +1,169 @@
+@import "tailwindcss";
+
+/*
+  Apple Human Interface style, tinted with the KHETNITI brand.
+  Semantic colours follow iOS/macOS system colours; the accent (tint) is Canopy / Khet Green,
+  highlights use Harvest Gold. Every colour is a variable so dark mode is a token swap.
+*/
+:root {
+  --bg: #f2f2f7; /* systemGroupedBackground */
+  --surface: #ffffff; /* secondarySystemGroupedBackground */
+  --surface-2: #f2f2f7;
+  --fill: rgba(118, 118, 128, 0.12); /* tertiarySystemFill */
+  --fill-strong: rgba(118, 118, 128, 0.2);
+  --label: #1d1d1f;
+  --label-2: rgba(60, 60, 67, 0.62);
+  --label-3: rgba(60, 60, 67, 0.32);
+  --separator: rgba(60, 60, 67, 0.13);
+  --material: rgba(246, 246, 248, 0.72); /* translucent bars */
+  --sidebar: rgba(236, 238, 236, 0.78);
+
+  --tint: #1e6b4b; /* brand Canopy as accent */
+  --tint-deep: #0d3b2b; /* brand Khet Green */
+  --on-tint: #ffffff;
+  --gold: #e9ac27; /* Harvest Gold */
+  --gold-text: #8b5e00; /* Ripe Gold */
+
+  --green: #34c759;
+  --orange: #ff9500;
+  --red: #ff3b30;
+  --blue: #007aff;
+  --indigo: #5856d6;
+  --teal: #30b0c7;
+  --pink: #ff2d55;
+  --brown: #a2845e;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --surface: #1c1c1e;
+    --surface-2: #2c2c2e;
+    --fill: rgba(118, 118, 128, 0.24);
+    --fill-strong: rgba(118, 118, 128, 0.36);
+    --label: #f5f5f7;
+    --label-2: rgba(235, 235, 245, 0.62);
+    --label-3: rgba(235, 235, 245, 0.3);
+    --separator: rgba(84, 84, 88, 0.6);
+    --material: rgba(22, 22, 24, 0.72);
+    --sidebar: rgba(28, 28, 30, 0.8);
+
+    --tint: #3dbe85;
+    --tint-deep: #12402f;
+    --on-tint: #04140d;
+    --gold: #f2bb3c;
+    --gold-text: #f2c14e;
+
+    --green: #30d158;
+    --orange: #ff9f0a;
+    --red: #ff453a;
+    --blue: #0a84ff;
+    --indigo: #5e5ce6;
+    --teal: #40c8e0;
+    --pink: #ff375f;
+    --brown: #ac8e68;
+
+    --shadow: none;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fill: var(--fill);
+  --color-fill-strong: var(--fill-strong);
+  --color-label: var(--label);
+  --color-label-2: var(--label-2);
+  --color-label-3: var(--label-3);
+  --color-separator: var(--separator);
+  --color-material: var(--material);
+  --color-sidebar: var(--sidebar);
+  --color-tint: var(--tint);
+  --color-tint-deep: var(--tint-deep);
+  --color-on-tint: var(--on-tint);
+  --color-gold: var(--gold);
+  --color-gold-text: var(--gold-text);
+  --color-green: var(--green);
+  --color-orange: var(--orange);
+  --color-red: var(--red);
+  --color-blue: var(--blue);
+
+  /* SF Pro on Apple devices; Inter elsewhere. Hind for Devanagari. Sora only for the wordmark. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", var(--font-inter), "Segoe UI", system-ui, sans-serif;
+  --font-hindi: var(--font-hind), -apple-system, sans-serif;
+  --font-brand: var(--font-sora), -apple-system, sans-serif;
+
+  --shadow-card: var(--shadow);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--bg);
+  color: var(--label);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.006em;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--tint) 25%, transparent);
+}
+
+/* iOS-style form controls */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.55;
+}
+select {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Recharts: hairline grids and secondary-label ticks */
+.recharts-cartesian-grid line {
+  stroke: var(--separator);
+}
+.recharts-cartesian-axis-tick-value,
+.recharts-text {
+  fill: var(--label-2);
+  font-size: 11px;
+}
+.recharts-cartesian-axis-line,
+.recharts-cartesian-axis-tick-line {
+  stroke: var(--separator);
+}
+.recharts-default-tooltip {
+  border-radius: 12px !important;
+  border: none !important;
+  background: var(--surface) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  font-size: 12px;
+}
+.recharts-legend-item-text {
+  color: var(--label-2) !important;
+  font-size: 12px;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+  .print-full {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
