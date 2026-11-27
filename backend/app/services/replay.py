@@ -25,7 +25,7 @@ def replay_window(crop: str) -> dict:
         raise ReplayError("No price history available.")
     first = date.fromisoformat(rng["first"]) + timedelta(days=MIN_HISTORY_DAYS)
     last = date.fromisoformat(rng["last"]) - timedelta(days=max(CROPS[crop]["wait_horizons"]) + OUTCOME_TOLERANCE_DAYS)
-    return {"earliest": str(first), "latest": str(last), "is_demo": rng["is_demo"]}
+    return {"earliest": str(first), "latest": str(last)}
 
 
 def _actual_price(frame, market_id: str, target: date) -> tuple[float, str] | None:
@@ -48,7 +48,7 @@ def replay(crop: str, as_of: date, quantity_q: float, location: str, **advise_kw
     if date.fromisoformat(advice["data_max_date"]) > as_of or date.fromisoformat(advice["best_now"]["price_date"]) > as_of:
         raise ReplayError("Look-ahead check failed: decision used data after the replay date.")
 
-    is_demo = advice["provenance"]["mode"] == "demo"
+    is_demo = False
     horizon_max = max(CROPS[crop]["wait_horizons"])
     future = prices.load_frame(crop, is_demo, start=as_of + timedelta(days=1), cutoff=as_of + timedelta(days=horizon_max + OUTCOME_TOLERANCE_DAYS))
 
@@ -194,5 +194,5 @@ def backtest(crop: str, start: date, end: date, step_days: int, quantity_q: floa
             ),
             "baseline_note": "Baseline = always selling immediately at your local (nearest) mandi.",
         },
-        "provenance": prices.provenance(crop, win["is_demo"], prices.load_frame(crop, win["is_demo"], cutoff=end, start=end), reference_date=end),
+        "provenance": prices.provenance(crop, False, prices.load_frame(crop, False, cutoff=end, start=end), reference_date=end),
     }

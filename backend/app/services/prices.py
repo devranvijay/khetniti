@@ -1,8 +1,7 @@
 """Mandi price storage, live ingestion from data.gov.in (AGMARKNET), and provenance.
 
-Two datasets live side by side and are never mixed in one response:
-  * real   (is_demo = False): AGMARKNET via data.gov.in API or an AGMARKNET CSV import
-  * demo   (is_demo = True):  synthetic series from scripts/generate_demo_data.py, always labelled DEMO
+Only real AGMARKNET prices are served: from the data.gov.in API or an AGMARKNET CSV import. There is
+no demo or synthetic fallback; a crop with no real prices returns a clear "no price data" error.
 
 Every read accepts `cutoff`; rows dated after it are excluded in SQL. Decision Replay relies on this.
 """
@@ -20,10 +19,11 @@ from ..db import engine, mandi_prices
 from ..reference import CROPS, MANDIS, match_mandi, road_distance_km
 from .weather import IST
 
-DEMO_SOURCE = "KHETNITI demo dataset (synthetic)"
 LIVE_SOURCE = "AGMARKNET via data.gov.in API"
-MIN_REAL_HISTORY_DATES = 60
 LIVE_MAX_LAG_DAYS = 3
+# data.gov.in stalls requests that carry the default python-httpx User-Agent until they time out,
+# so every call to it identifies the app instead.
+DATA_GOV_HEADERS = {"User-Agent": "KHETNITI/1.0 (mandi price decision support)", "Accept": "application/json"}
 STALE_PRICE_DAYS = 7
 
 _refresh_state: dict[str, dict] = {}
@@ -79,18 +79,12 @@ def dataset_stats(commodity: str, is_demo: bool) -> dict:
 
 
 def choose_dataset(commodity: str, purpose: str) -> bool:
-    """Return is_demo for the dataset to use. Real data wins whenever there is enough of it."""
-    real = dataset_stats(commodity, False)
-    if purpose == "latest" and real["dates"] > 0:
-        return False
-    if purpose == "history" and real["dates"] >= MIN_REAL_HISTORY_DATES:
-        return False
-    if dataset_stats(commodity, True)["dates"] > 0:
-        return True
-    if real["dates"] > 0:
+    """Return is_demo for the dataset to use: always the real one. Raises when a crop has no real prices."""
+    if dataset_stats(commodity, False)["dates"] > 0:
         return False
     raise NoPriceData(
-        f"No price data for {commodity}. Set DATA_GOV_IN_API_KEY, import an AGMARKNET CSV, or run scripts/generate_demo_data.py."
+        f"No real price data for {commodity} yet. Import an AGMARKNET CSV (scripts/import_agmarknet_csv.py) "
+        "or set DATA_GOV_IN_API_KEY and run scripts/fetch_agmarknet_history.py."
     )
 
 
@@ -124,15 +118,6 @@ def load_frame(
 
 
 def provenance(commodity: str, is_demo: bool, df: pd.DataFrame, reference_date: date | None = None) -> dict:
-    if is_demo:
-        return {
-            "mode": "demo",
-            "label": "DEMO DATA",
-            "source": DEMO_SOURCE,
-            "notice": "Synthetic prices generated for demonstration. These are not real market prices.",
-            "latest_price_date": str(df["date"].max()) if not df.empty else None,
-            "last_updated": None,
-        }
     latest = df["date"].max() if not df.empty else None
     ref = reference_date or today_ist()
     lag = (ref - latest).days if latest else None
@@ -254,7 +239,7 @@ def refresh_live(commodity: str, force: bool = False) -> dict:
         "filters[commodity]": CROPS[commodity]["agmarknet_name"],
     }
     try:
-        r = httpx.get(url, params=params, timeout=settings.http_timeout_seconds)
+        r = httpx.get(url, params=params, headers=DATA_GOV_HEADERS, timeout=settings.http_timeout_seconds)
         r.raise_for_status()
         records = r.json().get("records", [])
     except (httpx.HTTPError, ValueError) as exc:

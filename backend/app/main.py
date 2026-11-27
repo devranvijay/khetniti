@@ -73,12 +73,10 @@ def sources():
     out = []
     for crop in CROPS:
         real = prices.dataset_stats(crop, False)
-        demo = prices.dataset_stats(crop, True)
         out.append(
             {
                 "crop": crop,
                 "real": {"dates": real["dates"], "first": str(real["first"] or ""), "last": str(real["last"] or ""), "fetched_at": str(real["fetched_at"] or "")},
-                "demo": {"dates": demo["dates"], "first": str(demo["first"] or ""), "last": str(demo["last"] or "")},
             }
         )
     return {
@@ -91,7 +89,6 @@ def sources():
             {"name": "Open-Meteo Forecast API", "use": "7-day weather forecast", "status": "active (no key needed)"},
             {"name": "IMD", "use": "Official forecasts and warnings", "status": "no open API; not integrated"},
             {"name": "e-NAM", "use": "Additional market data", "status": "no open API; not integrated"},
-            {"name": "KHETNITI demo dataset", "use": "Synthetic prices used only when no real data is loaded", "status": "always labelled DEMO"},
         ],
     }
 

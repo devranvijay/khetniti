@@ -97,11 +97,11 @@ LOCATIONS: dict[str, dict] = {
 
 # Mandis (APMCs). `aliases` match AGMARKNET market names (case-insensitive substring).
 MANDIS: dict[str, dict] = {
-    "nashik": {"id": "nashik", "name": "Nashik APMC", "lat": 19.9975, "lon": 73.7898, "aliases": ["nashik"], "crops": ["tomato", "onion", "potato"]},
+    "nashik": {"id": "nashik", "name": "Nashik APMC", "lat": 19.9975, "lon": 73.7898, "aliases": ["nashik", "nasik"], "crops": ["tomato", "onion", "potato"]},
     "pimpalgaon": {"id": "pimpalgaon", "name": "Pimpalgaon Baswant APMC", "lat": 20.1667, "lon": 73.9833, "aliases": ["pimpalgaon"], "crops": ["tomato", "onion"]},
     "lasalgaon": {"id": "lasalgaon", "name": "Lasalgaon APMC", "lat": 20.1490, "lon": 74.2318, "aliases": ["lasalgaon"], "crops": ["onion"]},
     "yeola": {"id": "yeola", "name": "Yeola APMC", "lat": 20.0420, "lon": 74.4890, "aliases": ["yeola"], "crops": ["onion"]},
-    "sinnar": {"id": "sinnar", "name": "Sinnar APMC", "lat": 19.8450, "lon": 73.9980, "aliases": ["sinnar"], "crops": ["tomato", "onion"]},
+    "sinnar": {"id": "sinnar", "name": "Sinnar APMC", "lat": 19.8450, "lon": 73.9980, "aliases": ["sinnar", "sinner"], "crops": ["tomato", "onion"]},
     "ahmednagar": {"id": "ahmednagar", "name": "Ahmednagar APMC", "lat": 19.0948, "lon": 74.7480, "aliases": ["ahmednagar", "ahilyanagar"], "crops": ["tomato", "onion", "potato"]},
     "pune": {"id": "pune", "name": "Pune (Gultekdi) APMC", "lat": 18.4900, "lon": 73.8650, "aliases": ["pune"], "crops": ["tomato", "onion", "potato"]},
     "mumbai": {"id": "mumbai", "name": "Mumbai (Vashi) APMC", "lat": 19.0771, "lon": 72.9986, "aliases": ["mumbai", "vashi"], "crops": ["tomato", "onion", "potato"]},
@@ -126,7 +126,15 @@ def road_distance_km(location_id: str, mandi_id: str) -> float:
 
 
 def match_mandi(market_name: str) -> str | None:
+    """Map an AGMARKNET market name to one of MANDIS, or None.
+
+    Only a mandi's main yard counts ("APMC Pimpalgaon Baswant", "Pune APMC"). Sub-yards
+    ("Lasalgaon(Vinchur)") and private markets that only mention a district ("..., Dist Nashik")
+    are different markets with their own prices, so they are not merged into the APMC.
+    """
     name = market_name.lower()
+    if "(" in name or "," in name:
+        return None
     for mid, m in MANDIS.items():
         if any(alias in name for alias in m["aliases"]):
             return mid

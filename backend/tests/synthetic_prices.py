@@ -1,21 +1,14 @@
-"""Generate the synthetic DEMO price dataset (seeded, reproducible).
+"""Synthetic, seeded mandi prices for the test suite only.
 
-These prices are invented for demonstration. They are stored with is_demo = True and the API labels
-them "DEMO DATA" everywhere. They are used only when no real AGMARKNET data is loaded.
-
-Usage (from backend/):  .venv/bin/python -m scripts.generate_demo_data [--start 2024-01-01]
+Loaded into the tests' throwaway SQLite database (see conftest.py); never into the app's database.
 """
 
-import argparse
 import math
 from datetime import date, datetime, timedelta
 
 import numpy as np
-from sqlalchemy import delete
 
-from app.db import engine, init_db, mandi_prices
-from app.reference import CROPS, MANDIS
-from app.services.prices import DEMO_SOURCE, today_ist, upsert_rows
+from app.reference import MANDIS
 from app.services.weather import IST
 
 # (base ₹/q, seasonal amplitude, month of seasonal peak, daily noise)
@@ -71,31 +64,9 @@ def generate(start: date, end: date, seed: int = 2026) -> list[dict]:
                         "max_price": round(modal * spread_hi / 10) * 10,
                         "modal_price": round(modal / 10) * 10,
                         "arrivals_tonnes": round(arrivals, 1),
-                        "source": DEMO_SOURCE,
-                        "is_demo": True,
+                        "source": "Synthetic test prices",
+                        "is_demo": False,
                         "fetched_at": fetched_at,
                     }
                 )
     return rows
-
-
-def main() -> None:
-    p = argparse.ArgumentParser()
-    p.add_argument("--start", default="2024-01-01")
-    p.add_argument("--end", default=None, help="defaults to yesterday (IST)")
-    args = p.parse_args()
-    init_db()
-    start = date.fromisoformat(args.start)
-    end = date.fromisoformat(args.end) if args.end else today_ist() - timedelta(days=1)
-    with engine.begin() as conn:
-        conn.execute(delete(mandi_prices).where(mandi_prices.c.is_demo.is_(True)))
-    rows = generate(start, end)
-    # Bulk insert (table was just cleared of demo rows, so no upsert needed).
-    with engine.begin() as conn:
-        for i in range(0, len(rows), 2000):
-            conn.execute(mandi_prices.insert(), rows[i : i + 2000])
-    print(f"Inserted {len(rows)} DEMO rows for {', '.join(CROPS)} from {start} to {end}.")
-
-
-if __name__ == "__main__":
-    main()

@@ -31,11 +31,12 @@ def test_advice_options_are_internally_consistent():
         assert o["gross"] == pytest.approx(o["quantity_q"] * o["price_per_q"])
         assert o["net"] == pytest.approx(o["gross"] - o["transport"] - o["handling"] - o["market_fee"] - o["storage"])
     assert a["best_now"]["net"] == max(o["net"] for o in a["options"] if not o["stale"])
-    assert a["provenance"]["mode"] == "demo"
+    assert a["provenance"]["mode"] == "historical"
 
 
 def test_cutoff_excludes_future_rows():
-    df = prices.load_frame("onion", True, cutoff=date(2025, 3, 1))
+    df = prices.load_frame("onion", False, cutoff=date(2025, 3, 1))
+    assert not df.empty
     assert df["date"].max() <= date(2025, 3, 1)
 
 

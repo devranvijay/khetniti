@@ -134,7 +134,7 @@ def advise(
     local = next((o for o in options if o["market_id"] == local_mandi), None)
 
     # Wait scenarios at the best-now mandi, using only data up to the reference date.
-    is_demo = latest["provenance"]["mode"] == "demo"
+    is_demo = False
     hist = prices.load_frame(crop, is_demo, cutoff=ref_date, start=ref_date - timedelta(days=60), market_ids=[best_now["market_id"]])
     data_max_date = str(hist["date"].max()) if not hist.empty else best_now["price_date"]
     trend = trend_stats(hist)

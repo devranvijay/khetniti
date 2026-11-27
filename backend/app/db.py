@@ -21,7 +21,7 @@ engine = create_engine(settings.database_url, future=True, pool_pre_ping=True, c
 metadata = MetaData()
 
 # One row per (date, commodity, market). Varieties are averaged at ingest.
-# is_demo separates the synthetic demo dataset from real AGMARKNET data so they are never mixed.
+# is_demo is kept for schema compatibility. The app stores and serves real AGMARKNET data only (is_demo = False).
 mandi_prices = Table(
     "mandi_prices",
     metadata,
