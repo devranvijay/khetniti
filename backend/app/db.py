@@ -13,11 +13,27 @@ from sqlalchemy import (
     UniqueConstraint,
     create_engine,
 )
+from sqlalchemy.pool import NullPool
 
 from .config import settings
 
-_connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
-engine = create_engine(settings.database_url, future=True, pool_pre_ping=True, connect_args=_connect_args)
+
+
+def normalize_database_url(url: str) -> str:
+    """Supabase shows `postgresql://...`, which SQLAlchemy maps to psycopg2; this app installs psycopg 3."""
+    for prefix in ("postgresql://", "postgres://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix) :]
+    return url
+
+
+DATABASE_URL = normalize_database_url(settings.database_url)
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, future=True, pool_pre_ping=True, connect_args={"check_same_thread": False})
+else:
+    # Serverless (Vercel): hold no pool inside the function; Supabase's pooler does the pooling. Its
+    # transaction mode cannot keep prepared statements, so psycopg's automatic preparing is off.
+    engine = create_engine(DATABASE_URL, future=True, poolclass=NullPool, connect_args={"prepare_threshold": None})
 metadata = MetaData()
 
 # One row per (date, commodity, market). Varieties are averaged at ingest.

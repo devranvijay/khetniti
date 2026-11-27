@@ -20,6 +20,9 @@ class Settings(BaseSettings):
 
     cors_origins: str = "http://localhost:3000"
 
+    # Vercel Cron sends this as "Authorization: Bearer <CRON_SECRET>". Unset = the cron endpoint is closed.
+    cron_secret: str | None = None
+
     weather_cache_minutes: int = 30
     price_refresh_minutes: int = 60
     http_timeout_seconds: float = 12.0

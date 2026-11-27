@@ -1,7 +1,7 @@
 import json
 from datetime import date, datetime
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy import desc, insert, select
@@ -134,6 +134,16 @@ def prices_history(crop: str = "tomato", markets: str | None = None, days: int =
 def prices_refresh(crop: str = "tomato"):
     _crop(crop)
     return prices.refresh_live(crop, force=True)
+
+
+@app.get("/api/cron/refresh-prices")
+def cron_refresh_prices(authorization: str | None = Header(default=None)):
+    """Daily Vercel Cron job: store today's AGMARKNET prices for every crop, so history has no gaps."""
+    if not settings.cron_secret:
+        raise HTTPException(503, "CRON_SECRET is not set on the server.")
+    if authorization != f"Bearer {settings.cron_secret}":
+        raise HTTPException(401, "Unauthorized")
+    return {crop: prices.refresh_live(crop, force=True) for crop in CROPS}
 
 
 # ---------------------------------------------------------------- advisor

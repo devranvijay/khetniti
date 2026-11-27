@@ -7,4 +7,4 @@ sqlalchemy
 pydantic-settings
 python-dotenv
 pytest
-# For PostgreSQL: psycopg[binary]
+psycopg[binary]  # PostgreSQL (Supabase) driver
