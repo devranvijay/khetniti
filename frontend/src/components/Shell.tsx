@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Calculator, ChartLine, CloudSun, FileText, History, House, MapPin, Monitor, Moon, Sun } from "lucide-react";
 import { useApp, type ThemePref } from "./AppContext";
 import { BrandLogo } from "./Brand";
 import { Segmented, Select } from "./ui";
+import { useTrackSelect } from "./useTrackSelect";
 
 const NAV = [
   { href: "/", label: "Dashboard", short: "Home", icon: House, color: "#1E6B4B" },
@@ -17,6 +19,64 @@ const NAV = [
 ];
 
 const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+
+/** Sidebar rows are a fixed height so the selection pill can slide between them. */
+const NAV_ROW_PX = 36;
+const NAV_GAP_PX = 2;
+
+/** True once the page has scrolled, so bars show their edge only when content is underneath. */
+function useScrolled() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 2);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return scrolled;
+}
+
+/**
+ * iOS 26-style floating tab bar: a glass capsule whose selection lens slides on a spring.
+ * Press and drag the lens across tabs; release to go. Keyboard users Tab between plain links.
+ */
+function TabBar({ pathname }: { pathname: string }) {
+  const router = useRouter();
+  const index = NAV.findIndex((n) => isActive(pathname, n.href));
+  const { shown, pressed, track, onClickCapture } = useTrackSelect(NAV.length, index, (i) => router.push(NAV[i].href));
+  return (
+    <nav aria-label="Sections" className="no-print pointer-events-none fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(env(safe-area-inset-bottom),12px)] lg:hidden">
+      <div
+        {...track}
+        className="material-float pointer-events-auto relative mx-auto grid max-w-[520px] touch-pan-y select-none grid-cols-6 rounded-full p-1"
+      >
+        {shown >= 0 && (
+          <span
+            aria-hidden
+            className="slide absolute inset-y-1 left-1 rounded-full bg-fill-strong"
+            style={{ width: "calc((100% - 8px) / 6)", transform: `translateX(${shown * 100}%) scale(${pressed ? 1.08 : 1})` }}
+          />
+        )}
+        {NAV.map(({ href, short, icon: Icon }, i) => {
+          const lit = i === shown;
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={i === index ? "page" : undefined}
+              onClickCapture={onClickCapture}
+              draggable={false}
+              className={`relative flex flex-col items-center gap-0.5 rounded-full pb-1.5 pt-2 text-10 font-medium transition-colors duration-200 [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${lit ? "text-tint" : "text-label"}`}
+            >
+              <Icon className="size-[22px]" strokeWidth={lit ? 2.3 : 1.8} />
+              {short}
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
 
 export function ThemeSwitch({ withLabels = false }: { withLabels?: boolean }) {
   const { theme, setTheme } = useApp();
@@ -88,31 +148,40 @@ function CropAndPlace() {
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { metaError } = useApp();
-  const current = NAV.find((n) => isActive(pathname, n.href));
+  const activeIndex = NAV.findIndex((n) => isActive(pathname, n.href));
+  const current = NAV[activeIndex];
+  const scrolled = useScrolled();
 
   return (
     <div className="flex min-h-dvh">
-      {/* macOS-style translucent sidebar (desktop) */}
-      <aside className="no-print sticky top-0 hidden h-dvh w-[248px] shrink-0 flex-col border-r border-separator bg-sidebar px-3 pb-4 pt-5 backdrop-blur-2xl backdrop-saturate-150 lg:flex">
+      {/* macOS-style translucent sidebar (desktop): the heaviest material, it carries structure */}
+      <aside className="no-print material-sidebar sticky top-0 hidden h-dvh w-[248px] shrink-0 flex-col border-r border-separator px-3 pb-4 pt-5 lg:flex">
         <Link href="/" className="mb-6 block px-2" aria-label="KHETNITI home">
           <div className="flex flex-col items-start">
             <BrandLogo variant="lockup" className="h-[38px]" priority />
             <BrandLogo variant="hindi" className="-mt-0.5 h-[16px] pl-[33px] opacity-85" />
           </div>
         </Link>
-        <div className="px-2.5 pb-1 text-[11px] font-semibold text-label-3">Decide</div>
-        <nav className="space-y-0.5">
+        <div className="px-2.5 pb-1 text-11 font-semibold text-label-3">Decide</div>
+        <nav aria-label="Sections" className="relative flex flex-col" style={{ gap: NAV_GAP_PX }}>
+          {activeIndex >= 0 && (
+            <span
+              aria-hidden
+              className="slide absolute inset-x-0 top-0 rounded-[8px] bg-tint"
+              style={{ height: NAV_ROW_PX, transform: `translateY(${activeIndex * (NAV_ROW_PX + NAV_GAP_PX)}px)` }}
+            />
+          )}
           {NAV.map(({ href, label, icon: Icon, color }) => {
             const active = isActive(pathname, href);
             return (
               <Link
                 key={href}
                 href={href}
-                className={`flex items-center gap-2.5 rounded-[8px] px-2 py-[7px] text-[14px] transition-colors ${
-                  active ? "bg-tint text-on-tint" : "text-label hover:bg-fill"
-                }`}
+                aria-current={active ? "page" : undefined}
+                style={{ height: NAV_ROW_PX }}
+                className={`relative flex items-center gap-2.5 rounded-[8px] px-2 text-14 transition-colors duration-200 ${active ? "text-on-tint" : "text-label hover:bg-fill active:bg-fill-strong"}`}
               >
-                <span className="grid size-6 place-items-center rounded-[6px]" style={{ background: active ? "rgba(255,255,255,0.2)" : color }}>
+                <span className="grid size-6 place-items-center rounded-[6px] transition-colors duration-200" style={{ background: active ? "rgba(255,255,255,0.2)" : color }}>
                   <Icon className="size-[15px] text-white" strokeWidth={2.2} />
                 </span>
                 <span className={active ? "font-semibold" : "font-medium"}>{label}</span>
@@ -122,10 +191,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="mt-auto space-y-3 px-1">
           <div>
-            <div className="px-1.5 pb-1.5 text-[11px] font-semibold text-label-3">Appearance</div>
+            <div className="px-1.5 pb-1.5 text-11 font-semibold text-label-3">Appearance</div>
             <ThemeSwitch withLabels />
           </div>
-          <p className="px-1.5 text-[11px] leading-relaxed text-label-3">
+          <p className="px-1.5 text-11 leading-relaxed text-label-3">
             Smart Decisions. Better Harvests.
             <br />
             Estimates only — prices and profits are never guaranteed.
@@ -134,12 +203,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Translucent toolbar */}
-        <div className="no-print sticky top-0 z-20 border-b border-separator bg-material pt-[env(safe-area-inset-top)] backdrop-blur-2xl backdrop-saturate-150">
+        {/* Translucent toolbar: content scrolls underneath; its edge appears only once it does */}
+        <div
+          className={`no-print material-bar sticky top-0 z-20 border-b pt-[env(safe-area-inset-top)] transition-[border-color] duration-300 ${scrolled ? "border-separator" : "border-transparent"}`}
+        >
           <div className="mx-auto flex max-w-[1240px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 md:px-8">
             <Link href="/" className="flex min-w-0 items-center gap-2 lg:hidden" aria-label="KHETNITI home">
               <BrandLogo variant="mark" className="h-7" priority />
-              <span className="truncate text-[15px] font-semibold">{current?.label ?? "KHETNITI"}</span>
+              <span className="truncate text-17 font-semibold">{current?.label ?? "KHETNITI"}</span>
             </Link>
             <div className="ml-auto lg:hidden">
               <ThemeSwitch />
@@ -157,26 +228,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
         <main className="print-full mx-auto w-full max-w-[1240px] flex-1 px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-5 md:px-8 md:pt-8 lg:pb-12">
           {metaError && (
-            <div className="mb-4 rounded-[12px] p-3 text-[13px] text-red" style={{ background: "color-mix(in srgb, var(--red) 10%, transparent)" }}>
+            <div className="mb-4 rounded-[12px] p-3 text-13 text-red" style={{ background: "color-mix(in srgb, var(--red) 10%, transparent)" }}>
               {metaError}
             </div>
           )}
-          {children}
+          <div key={pathname} className="enter">
+            {children}
+          </div>
         </main>
       </div>
 
-      {/* iOS-style tab bar (phones and tablets) */}
-      <nav className="no-print fixed inset-x-0 bottom-0 z-30 grid grid-cols-6 border-t border-separator bg-material pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl backdrop-saturate-150 lg:hidden">
-        {NAV.map(({ href, short, icon: Icon }) => {
-          const active = isActive(pathname, href);
-          return (
-            <Link key={href} href={href} className={`flex flex-col items-center gap-0.5 pb-1.5 pt-2 text-[10px] font-medium ${active ? "text-tint" : "text-label-2"}`}>
-              <Icon className="size-[22px]" strokeWidth={active ? 2.3 : 1.8} />
-              {short}
-            </Link>
-          );
-        })}
-      </nav>
+      {/* Floating glass tab bar (phones and tablets) */}
+      <TabBar pathname={pathname} />
     </div>
   );
 }

@@ -74,20 +74,19 @@ function DashboardBody({ d, onRetry }: { d: Dashboard; onRetry: () => void }) {
         <HeroCard>
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div className="max-w-xl">
-              <div className="flex items-center gap-2 text-[13px] font-medium text-white/70">
+              <div className="flex items-center gap-2 text-13 font-medium text-white/70">
                 Today&apos;s outlook · example for 20 quintals
-                {d.advice.provenance.mode === "demo" && <span className="rounded-full bg-[#FF9500] px-2 py-0.5 text-[11px] font-semibold text-white">DEMO DATA</span>}
               </div>
-              <h2 className="mt-2 text-[22px] font-bold leading-tight tracking-[-0.02em] sm:text-[28px]">{d.advice.headline}</h2>
-              <p className="mt-2 text-[15px] text-white/75">{d.advice.reasons[0]}</p>
-              <Link href="/advisor" className="mt-4 inline-flex items-center gap-1 rounded-full bg-white/15 px-4 py-2 text-[14px] font-semibold backdrop-blur transition hover:bg-white/25">
+              <h2 className="mt-2 text-22 font-bold leading-tight sm:text-28">{d.advice.headline}</h2>
+              <p className="mt-2 text-15 text-white/75">{d.advice.reasons[0]}</p>
+              <Link href="/advisor" className="pressable mt-4 inline-flex min-h-11 items-center gap-1 rounded-full bg-white/15 px-4 py-2 text-15 font-semibold backdrop-blur hover:bg-white/25">
                 Use my quantity and costs <ChevronRight className="size-4" />
               </Link>
             </div>
             <div className="sm:text-right">
-              <div className="text-[13px] text-white/70">Estimated net revenue</div>
-              <div className="text-[32px] font-bold tracking-[-0.03em] text-[#F2BB3C] sm:text-[40px]">{inr(d.advice.estimated_net.net)}</div>
-              <div className="text-[13px] text-white/70">Confidence: {d.advice.confidence}</div>
+              <div className="text-13 text-white/70">Estimated net revenue</div>
+              <div className="text-32 font-bold text-[#F2BB3C] sm:text-40">{inr(d.advice.estimated_net.net)}</div>
+              <div className="text-13 text-white/70">Confidence: {d.advice.confidence}</div>
             </div>
           </div>
         </HeroCard>
@@ -100,12 +99,12 @@ function DashboardBody({ d, onRetry }: { d: Dashboard; onRetry: () => void }) {
         <Card>
           {d.weather ? (
             <>
-              <div className="text-[13px] font-medium text-label-2">Now in {d.location.name}</div>
+              <div className="text-13 font-medium text-label-2">Now in {d.location.name}</div>
               <div className="mt-1 flex items-center gap-2">
-                <span className="text-[34px]">{wxIcon(d.weather.current.weather_code)}</span>
-                <span className="text-[34px] font-semibold tracking-[-0.03em]">{Math.round(d.weather.current.temp)}°</span>
+                <span className="text-34">{wxIcon(d.weather.current.weather_code)}</span>
+                <span className="text-34 font-semibold">{Math.round(d.weather.current.temp)}°</span>
               </div>
-              <div className="text-[13px] text-label-2">
+              <div className="text-13 text-label-2">
                 {wxLabel(d.weather.current.weather_code)} · Humidity {d.weather.current.humidity}%
               </div>
             </>
@@ -114,16 +113,16 @@ function DashboardBody({ d, onRetry }: { d: Dashboard; onRetry: () => void }) {
           )}
         </Card>
         <Card>
-          <div className="text-[13px] font-medium text-label-2">Harvest risk · next 3 days</div>
+          <div className="text-13 font-medium text-label-2">Harvest risk · next 3 days</div>
           {d.risk ? (
             <>
               <div className="mt-2">
                 <RiskBadge level={d.risk.level} large />
               </div>
-              <div className="mt-2 line-clamp-2 text-[13px] text-label-2">{d.risk.reasons[0]}</div>
+              <div className="mt-2 line-clamp-2 text-13 text-label-2">{d.risk.reasons[0]}</div>
             </>
           ) : (
-            <div className="mt-2 text-[13px] text-label-2">Unavailable</div>
+            <div className="mt-2 text-13 text-label-2">Unavailable</div>
           )}
         </Card>
         <Card>
@@ -150,7 +149,7 @@ function DashboardBody({ d, onRetry }: { d: Dashboard; onRetry: () => void }) {
         {/* Weather */}
         <Card className="min-w-0 xl:col-span-3">
           <CardTitle title="7-day forecast" subtitle="Rain and temperature drive harvest timing">
-            <Link href="/harvest" className="inline-flex items-center gap-0.5 text-[14px] font-medium text-tint">
+            <Link href="/harvest" className="pressable inline-flex items-center gap-0.5 text-15 font-medium text-tint hover:opacity-70">
               Details <ArrowUpRight className="size-4" />
             </Link>
           </CardTitle>
@@ -160,9 +159,9 @@ function DashboardBody({ d, onRetry }: { d: Dashboard; onRetry: () => void }) {
               <div className="grid min-w-[460px] grid-cols-7 gap-1.5">
                 {d.weather.daily.map((day, i) => (
                   <div key={day.date} className="rounded-[12px] bg-surface-2 px-1 py-2 text-center">
-                    <div className="text-[11px] font-medium text-label-2">{i === 0 ? "Today" : weekday(day.date)}</div>
-                    <div className="my-1 text-[20px]">{wxIcon(day.weather_code)}</div>
-                    <div className="text-[12px] font-semibold tabular-nums">{Math.round(day.tmax)}°</div>
+                    <div className="text-11 font-medium text-label-2">{i === 0 ? "Today" : weekday(day.date)}</div>
+                    <div className="my-1 text-20">{wxIcon(day.weather_code)}</div>
+                    <div className="text-12 font-semibold tabular-nums">{Math.round(day.tmax)}°</div>
                     <div className="mx-auto mt-1 h-1 w-6 rounded-full" style={{ background: RISK_COLOR[d.risk!.per_day[i].level] }} title={`${d.risk!.per_day[i].level} risk`} />
                   </div>
                 ))}
@@ -179,7 +178,7 @@ function DashboardBody({ d, onRetry }: { d: Dashboard; onRetry: () => void }) {
         {/* Mandi snapshot */}
         <div className="min-w-0 space-y-2 xl:col-span-2">
           <div className="flex items-end justify-between px-1">
-            <h3 className="text-[17px] font-semibold">Highest modal prices</h3>
+            <h3 className="text-17 font-semibold">Highest modal prices</h3>
             {d.prices && <ProvenanceBadge p={d.prices.provenance} />}
           </div>
           <List>
@@ -196,14 +195,14 @@ function DashboardBody({ d, onRetry }: { d: Dashboard; onRetry: () => void }) {
                 value={
                   <div>
                     <div className="font-semibold text-label">{inr(m.modal_price)}</div>
-                    <div className="text-[12px]" style={{ color: (m.change_7d_pct ?? 0) >= 0 ? "var(--green)" : "var(--red)" }}>
+                    <div className="text-12" style={{ color: (m.change_7d_pct ?? 0) >= 0 ? "var(--green)" : "var(--red)" }}>
                       {pct(m.change_7d_pct)}
                     </div>
                   </div>
                 }
               />
             ))}
-            <Link href="/mandi" className="flex items-center justify-between px-4 py-3 text-[15px] text-tint hover:bg-fill">
+            <Link href="/mandi" className="highlight flex min-h-11 items-center justify-between px-4 py-3 text-15 text-tint hover:bg-fill">
               Compare all mandis <ChevronRight className="size-4 text-label-3" />
             </Link>
           </List>
@@ -231,8 +230,8 @@ function DashboardBody({ d, onRetry }: { d: Dashboard; onRetry: () => void }) {
                 {s.icon}
               </span>
               <div>
-                <div className="text-[13px] text-label-2">{s.label}</div>
-                <div className="text-[20px] font-semibold tabular-nums">{s.value}</div>
+                <div className="text-13 text-label-2">{s.label}</div>
+                <div className="text-20 font-semibold tabular-nums">{s.value}</div>
               </div>
               <Badge color={s.color}>7-day</Badge>
             </Card>

@@ -25,7 +25,7 @@ import {
 import { post, type Backtest, type Replay } from "@/lib/api";
 import { inr, longDate, shortDate } from "@/lib/format";
 
-type Window = { earliest: string; latest: string; is_demo: boolean };
+type Window = { earliest: string; latest: string };
 
 export default function ReplayPage() {
   const { crop, location } = useApp();
@@ -69,6 +69,7 @@ function Single({ win }: { win: Window }) {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [runs, setRuns] = useState(0);
 
   async function run() {
     setBusy(true);
@@ -76,6 +77,7 @@ function Single({ win }: { win: Window }) {
     setSaved(false);
     try {
       setRes(await post<Replay>("/api/replay", { crop, location, as_of: asOf, quantity_q: Number(qty) }));
+      setRuns((r) => r + 1);
     } catch (e) {
       setErr((e as Error).message);
       setRes(null);
@@ -129,32 +131,31 @@ function Single({ win }: { win: Window }) {
             <div className="mx-auto mb-3 grid size-14 place-items-center rounded-[16px] bg-[#5856D6]/12 text-[#5856D6]">
               <HistoryIcon className="size-7" />
             </div>
-            <h3 className="text-[20px] font-semibold">Pick a date to replay</h3>
-            <p className="mt-1 text-[15px] text-label-2">The recommendation is rebuilt from prices dated on or before that day only. Later prices are used just to score it.</p>
+            <h3 className="text-20 font-semibold">Pick a date to replay</h3>
+            <p className="mt-1 text-15 text-label-2">The recommendation is rebuilt from prices dated on or before that day only. Later prices are used just to score it.</p>
           </div>
         </Card>
       )}
       {res && (
-        <>
+        <div key={runs} className="enter space-y-5">
           <div className="grid gap-5 lg:grid-cols-2">
             <HeroCard>
-              <div className="text-[13px] text-white/70">
+              <div className="text-13 text-white/70">
                 What KHETNITI would have said on {longDate(res.as_of)}
-                {res.provenance.mode === "demo" && <span className="ml-2 rounded-full bg-[#FF9500] px-2 py-0.5 text-[11px] font-semibold text-white">DEMO DATA</span>}
               </div>
-              <h2 className="mt-2 text-[20px] font-bold leading-tight tracking-[-0.02em] sm:text-[24px]">{res.advice.headline}</h2>
-              <div className="mt-3 text-[13px] text-white/70">Expected net then</div>
-              <div className="text-[30px] font-bold text-[#F2BB3C]">{inr(res.advice.estimated_net.net)}</div>
+              <h2 className="mt-2 text-20 font-bold leading-tight sm:text-24">{res.advice.headline}</h2>
+              <div className="mt-3 text-13 text-white/70">Expected net then</div>
+              <div className="text-30 font-bold text-[#F2BB3C]">{inr(res.advice.estimated_net.net)}</div>
             </HeroCard>
             <Card className="flex flex-col justify-between">
               <div className="flex items-center gap-3">
                 {res.good_call ? <CircleCheck className="size-9 text-green" /> : <CircleX className="size-9 text-orange" />}
                 <div>
-                  <div className="text-[13px] text-label-2">What actually happened</div>
-                  <div className="text-[24px] font-bold tracking-[-0.02em]">{res.verdict}</div>
+                  <div className="text-13 text-label-2">What actually happened</div>
+                  <div className="text-24 font-bold">{res.verdict}</div>
                 </div>
               </div>
-              <p className="mt-3 text-[15px] text-label-2">{res.verdict_detail}</p>
+              <p className="mt-3 text-15 text-label-2">{res.verdict_detail}</p>
               <div className="mt-4 grid grid-cols-2 gap-4">
                 <Stat label="Recommendation earned" value={inr(res.recommended_outcome.net)} tone="tint" />
                 <Stat label="Missed vs best" value={inr(res.regret)} tone={res.regret > 0 ? "gold" : undefined} />
@@ -197,8 +198,8 @@ function Single({ win }: { win: Window }) {
                 <div className="flex items-start gap-3">
                   <ShieldCheck className="size-7 shrink-0 text-green" />
                   <div>
-                    <div className="text-[17px] font-semibold">No future data used</div>
-                    <p className="mt-1 text-[14px] text-label-2">{res.leakage_check.note}</p>
+                    <div className="text-17 font-semibold">No future data used</div>
+                    <p className="mt-1 text-14 text-label-2">{res.leakage_check.note}</p>
                   </div>
                 </div>
                 <List className="mt-4 !shadow-none ring-1 ring-separator">
@@ -216,7 +217,7 @@ function Single({ win }: { win: Window }) {
               {saved ? <Check className="size-4" /> : <Bookmark className="size-4" />} {saved ? "Saved to Reports" : "Save to Reports"}
             </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
@@ -238,6 +239,7 @@ function Period({ win }: { win: Window }) {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [runs, setRuns] = useState(0);
 
   async function run() {
     setBusy(true);
@@ -245,6 +247,7 @@ function Period({ win }: { win: Window }) {
     setSaved(false);
     try {
       setRes(await post<Backtest>("/api/replay/backtest", { crop, location, start, end, step_days: step, quantity_q: Number(qty) }));
+      setRuns((r) => r + 1);
     } catch (e) {
       setErr((e as Error).message);
       setRes(null);
@@ -299,7 +302,7 @@ function Period({ win }: { win: Window }) {
       </Card>
       {err && <ErrorBox message={err} />}
       {res && (
-        <>
+        <div key={runs} className="enter space-y-5">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Card>
               <Stat label="Decisions replayed" value={res.summary.decisions} sub={`${res.summary.wait_recommendations} said wait`} />
@@ -329,7 +332,7 @@ function Period({ win }: { win: Window }) {
               {saved ? <Check className="size-4" /> : <Bookmark className="size-4" />} {saved ? "Saved to Reports" : "Save to Reports"}
             </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

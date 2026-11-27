@@ -3,6 +3,7 @@
 import { ChevronDown, Info, RefreshCw, TriangleAlert } from "lucide-react";
 import type { Provenance, RiskLevel } from "@/lib/api";
 import { dateTime, longDate } from "@/lib/format";
+import { useTrackSelect } from "./useTrackSelect";
 
 /* ---------------------------------------------------------------- layout */
 
@@ -15,7 +16,7 @@ export function HeroCard({ children, className = "" }: { children: React.ReactNo
   return (
     <section
       className={`relative overflow-hidden rounded-[22px] p-5 text-white shadow-card sm:p-6 ${className}`}
-      style={{ background: "linear-gradient(145deg, #1E6B4B 0%, #0D3B2B 70%)" }}
+      style={{ background: "linear-gradient(145deg, #1E6B4B 0%, #0D3B2B 70%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.14), var(--shadow)" }}
     >
       {children}
     </section>
@@ -26,11 +27,11 @@ export function LargeTitle({ title, hindi, subtitle, children }: { title: string
   return (
     <header className="mb-5 flex flex-wrap items-end justify-between gap-4 md:mb-6">
       <div className="min-w-0">
-        <h1 className="text-[28px] font-bold leading-[34px] tracking-[-0.022em] text-label md:text-[34px] md:leading-[41px]">
+        <h1 className="text-28 font-bold leading-[34px] text-label md:text-34 md:leading-[41px]">
           {title}
-          {hindi && <span className="ml-2 inline-block font-hindi text-[18px] font-medium tracking-normal text-label-2 md:ml-2.5 md:text-[22px]">{hindi}</span>}
+          {hindi && <span className="ml-2 inline-block font-hindi text-18 font-medium tracking-normal text-label-2 md:ml-2.5 md:text-22">{hindi}</span>}
         </h1>
-        {subtitle && <p className="mt-1 max-w-2xl text-[14px] text-label-2 md:text-[15px]">{subtitle}</p>}
+        {subtitle && <p className="mt-1 max-w-2xl text-14 text-label-2 md:text-15">{subtitle}</p>}
       </div>
       {children}
     </header>
@@ -41,7 +42,7 @@ export function LargeTitle({ title, hindi, subtitle, children }: { title: string
 export function SectionHeader({ title, children }: { title: string; children?: React.ReactNode }) {
   return (
     <div className="mb-2 mt-1 flex items-end justify-between gap-3 px-1">
-      <h2 className="text-[20px] font-semibold tracking-[-0.016em] text-label">{title}</h2>
+      <h2 className="text-20 font-semibold text-label">{title}</h2>
       {children}
     </div>
   );
@@ -51,8 +52,8 @@ export function CardTitle({ title, subtitle, children }: { title: string; subtit
   return (
     <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h3 className="text-[17px] font-semibold tracking-[-0.012em] text-label">{title}</h3>
-        {subtitle && <p className="mt-0.5 text-[13px] text-label-2">{subtitle}</p>}
+        <h3 className="text-17 font-semibold text-label">{title}</h3>
+        {subtitle && <p className="mt-0.5 text-13 text-label-2">{subtitle}</p>}
       </div>
       {children}
     </div>
@@ -71,10 +72,10 @@ export function Row({ label, value, sub, icon, strong = false }: { label: React.
       {icon}
       <div className="flex min-h-11 flex-1 items-center justify-between gap-3 border-b border-separator py-2.5 pr-4 group-last:border-b-0">
         <div className="min-w-0">
-          <div className={`text-[15px] ${strong ? "font-semibold" : ""} text-label`}>{label}</div>
-          {sub && <div className="text-[12px] text-label-2">{sub}</div>}
+          <div className={`text-15 ${strong ? "font-semibold" : ""} text-label`}>{label}</div>
+          {sub && <div className="text-12 text-label-2">{sub}</div>}
         </div>
-        {value != null && <div className={`max-w-[60%] text-right text-[15px] tabular-nums [overflow-wrap:anywhere] ${strong ? "font-semibold text-label" : "text-label-2"}`}>{value}</div>}
+        {value != null && <div className={`max-w-[60%] text-right text-15 tabular-nums [overflow-wrap:anywhere] ${strong ? "font-semibold text-label" : "text-label-2"}`}>{value}</div>}
       </div>
     </div>
   );
@@ -94,9 +95,9 @@ export function Stat({ label, value, sub, tone, compact = false }: { label: stri
   const color = tone === "tint" ? "text-tint" : tone === "gold" ? "text-gold-text" : "text-label";
   return (
     <div>
-      <div className="text-[13px] font-medium text-label-2">{label}</div>
-      <div className={`mt-0.5 font-semibold leading-tight tracking-[-0.02em] tabular-nums ${compact ? "text-[20px]" : "text-[28px]"} ${color}`}>{value}</div>
-      {sub && <div className="mt-0.5 text-[13px] text-label-2">{sub}</div>}
+      <div className="text-13 font-medium text-label-2">{label}</div>
+      <div className={`mt-0.5 font-semibold leading-tight tabular-nums ${compact ? "text-20" : "text-28"} ${color}`}>{value}</div>
+      {sub && <div className="mt-0.5 text-13 text-label-2">{sub}</div>}
     </div>
   );
 }
@@ -104,7 +105,7 @@ export function Stat({ label, value, sub, tone, compact = false }: { label: stri
 export function Badge({ children, color = "var(--tint)", solid = false }: { children: React.ReactNode; color?: string; solid?: boolean }) {
   return (
     <span
-      className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-semibold"
+      className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-12 font-semibold"
       style={solid ? { background: color, color: "#fff" } : { background: `color-mix(in srgb, ${color} 15%, transparent)`, color }}
     >
       {children}
@@ -119,26 +120,25 @@ export function ProvenanceBadge({ p }: { p: Provenance }) {
         <span className="size-1.5 animate-pulse rounded-full bg-current" /> LIVE
       </Badge>
     );
-  if (p.mode === "historical") return <Badge color="var(--blue)">REAL · HISTORICAL</Badge>;
-  return <Badge color="var(--orange)">DEMO DATA</Badge>;
+  return <Badge color="var(--blue)">REAL · HISTORICAL</Badge>;
 }
 
 export function SourceFootnote({ p, extra }: { p: Provenance; extra?: string }) {
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-label-2">
+    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-12 text-label-2">
       <ProvenanceBadge p={p} />
       <span>Source: {p.source}</span>
       {p.latest_price_date && <span>· Price date {longDate(p.latest_price_date)}</span>}
       {p.last_updated && <span>· Updated {dateTime(p.last_updated)}</span>}
       {extra && <span>· {extra}</span>}
-      {p.notice && <span className={`w-full ${p.mode === "demo" ? "text-orange" : ""}`}>{p.notice}</span>}
+      {p.notice && <span className="w-full">{p.notice}</span>}
     </div>
   );
 }
 
 export function WeatherFootnote({ source, fetchedAt, stale, error }: { source: string; fetchedAt: string; stale: boolean; error: string | null }) {
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-label-2">
+    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-12 text-label-2">
       {stale ? <Badge color="var(--red)">STALE FORECAST</Badge> : <Badge color="var(--green)">LIVE FORECAST</Badge>}
       <span>Source: {source}</span>
       <span>· Fetched {dateTime(fetchedAt)}</span>
@@ -152,7 +152,7 @@ export const RISK_COLOR: Record<RiskLevel, string> = { Low: "var(--green)", Mode
 export function RiskBadge({ level, large = false }: { level: RiskLevel; large?: boolean }) {
   if (large)
     return (
-      <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[15px] font-semibold text-white" style={{ background: RISK_COLOR[level] }}>
+      <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-15 font-semibold text-white" style={{ background: RISK_COLOR[level] }}>
         {level} risk
       </span>
     );
@@ -173,11 +173,11 @@ export function Loading({ rows = 3 }: { rows?: number }) {
 
 export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <div className="flex items-start gap-3 rounded-[14px] p-4 text-[14px]" style={{ background: "color-mix(in srgb, var(--red) 10%, transparent)" }}>
+    <div className="flex items-start gap-3 rounded-[14px] p-4 text-14" style={{ background: "color-mix(in srgb, var(--red) 10%, transparent)" }}>
       <TriangleAlert className="mt-0.5 size-4 shrink-0 text-red" />
       <div className="flex-1 text-label">{message}</div>
       {onRetry && (
-        <button onClick={onRetry} className="inline-flex items-center gap-1 font-semibold text-tint">
+        <button type="button" onClick={onRetry} className="pressable inline-flex items-center gap-1 font-semibold text-tint">
           <RefreshCw className="size-3.5" /> Retry
         </button>
       )}
@@ -188,7 +188,7 @@ export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () =
 export function Note({ children, tone = "info" }: { children: React.ReactNode; tone?: "info" | "warn" }) {
   const color = tone === "warn" ? "var(--orange)" : "var(--blue)";
   return (
-    <div className="flex items-start gap-2.5 rounded-[12px] p-3 text-[13px] text-label" style={{ background: `color-mix(in srgb, ${color} 10%, transparent)` }}>
+    <div className="flex items-start gap-2.5 rounded-[12px] p-3 text-13 text-label" style={{ background: `color-mix(in srgb, ${color} 10%, transparent)` }}>
       <Info className="mt-0.5 size-4 shrink-0" style={{ color }} />
       <div>{children}</div>
     </div>
@@ -197,6 +197,10 @@ export function Note({ children, tone = "info" }: { children: React.ReactNode; t
 
 /* ---------------------------------------------------------------- controls */
 
+/**
+ * iOS segmented control: equal-width segments with a thumb that slides on a spring.
+ * Press anywhere to preview, drag across segments, release to commit; arrow keys move it too.
+ */
 export function Segmented<T extends string | number>({
   options,
   value,
@@ -213,23 +217,47 @@ export function Segmented<T extends string | number>({
   /** stretch to the container width (phones) */
   full?: boolean;
 }) {
+  const index = Math.max(0, options.findIndex((o) => o.value === value));
+  const commit = (i: number) => onChange(options[i].value);
+  const { shown, pressed, track, onClickCapture, onKeyDown } = useTrackSelect(options.length, index, commit);
   return (
-    <div role="radiogroup" aria-label={label} className={`${full ? "flex w-full" : "inline-flex"} rounded-[9px] bg-fill p-0.5`}>
-      {options.map((o) => {
-        const active = o.value === value;
+    <div
+      role="radiogroup"
+      aria-label={label}
+      onKeyDown={onKeyDown}
+      {...track}
+      className={`${full ? "grid w-full" : "inline-grid"} relative touch-pan-y select-none auto-cols-fr grid-flow-col rounded-[9px] bg-fill p-0.5`}
+    >
+      <span
+        aria-hidden
+        className="slide absolute inset-y-0.5 left-0.5 rounded-[7px] bg-seg-thumb shadow-[0_3px_8px_rgba(0,0,0,0.12),0_3px_1px_rgba(0,0,0,0.04),0_0_0_0.5px_rgba(0,0,0,0.04)]"
+        style={{ width: `calc((100% - 4px) / ${options.length})`, transform: `translateX(${shown * 100}%) scale(${pressed ? 0.95 : 1})` }}
+      />
+      {options.map((o, i) => {
+        const active = i === index;
         return (
           <button
             key={String(o.value)}
+            type="button"
             role="radio"
+            data-slot
             aria-checked={active}
             aria-label={o.title}
             title={o.title}
-            onClick={() => onChange(o.value)}
-            className={`inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-[7px] font-medium transition-all duration-200 ${full ? "flex-1" : ""} ${size === "sm" ? "px-2.5 py-1 text-[12px]" : "px-3 py-1.5 text-[13px]"} ${
-              active ? "bg-seg-thumb text-label shadow-[0_1px_3px_rgba(0,0,0,0.12),0_0_0_0.5px_rgba(0,0,0,0.04)]" : "text-label hover:opacity-70"
-            }`}
+            tabIndex={active ? 0 : -1}
+            onClickCapture={onClickCapture}
+            onClick={() => commit(i)}
+            className={`relative inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-[7px] text-label transition-[font-weight,opacity] duration-200 ${size === "sm" ? "px-2.5 py-1 text-12" : "px-3 py-1.5 text-13"} ${
+              i === shown ? "font-semibold" : "font-medium"
+            } ${pressed && i !== shown ? "opacity-60" : ""}`}
           >
-            {o.label}
+            {/* An invisible semibold copy reserves the selected width, so nothing shifts on selection. */}
+            <span className="grid place-items-center">
+              <span aria-hidden className="invisible col-start-1 row-start-1 inline-flex items-center gap-1 font-semibold">
+                {o.label}
+              </span>
+              <span className="col-start-1 row-start-1 inline-flex items-center gap-1">{o.label}</span>
+            </span>
           </button>
         );
       })}
@@ -240,15 +268,15 @@ export function Segmented<T extends string | number>({
 export function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="text-[13px] font-medium text-label-2">{label}</span>
+      <span className="text-13 font-medium text-label-2">{label}</span>
       <div className="mt-1">{children}</div>
-      {hint && <span className="mt-1 block text-[12px] text-label-3">{hint}</span>}
+      {hint && <span className="mt-1 block text-12 text-label-3">{hint}</span>}
     </label>
   );
 }
 
 export const inputCls =
-  "w-full rounded-[10px] bg-fill px-3 py-2 text-[15px] text-label outline-none transition placeholder:text-label-3 focus:bg-surface focus:ring-2 focus:ring-tint/40";
+  "w-full rounded-[10px] bg-fill px-3 py-2 text-15 text-label outline-none transition placeholder:text-label-3 focus:bg-surface focus:ring-2 focus:ring-tint/40";
 
 export function Select({ value, onChange, children, className = "" }: { value: string; onChange: (v: string) => void; children: React.ReactNode; className?: string }) {
   return (
@@ -262,7 +290,7 @@ export function Select({ value, onChange, children, className = "" }: { value: s
 }
 
 export const btnPrimary =
-  "inline-flex items-center justify-center gap-2 rounded-[12px] bg-tint px-5 py-2.5 text-[15px] font-semibold text-on-tint transition active:scale-[0.98] hover:brightness-110 disabled:opacity-40";
+  "pressable inline-flex min-h-11 items-center justify-center gap-2 rounded-[12px] bg-tint px-5 py-2.5 text-17 font-semibold text-on-tint hover:brightness-110 disabled:opacity-40";
 export const btnTinted =
-  "inline-flex items-center justify-center gap-1.5 rounded-full bg-tint/12 px-3.5 py-1.5 text-[13px] font-semibold text-tint transition hover:bg-tint/20 active:scale-[0.98] disabled:opacity-40";
-export const btnPlain = "inline-flex items-center gap-1 text-[15px] font-medium text-tint hover:opacity-70";
+  "pressable inline-flex items-center justify-center gap-1.5 rounded-full bg-tint/12 px-3.5 py-1.5 text-13 font-semibold text-tint hover:bg-tint/20 disabled:opacity-40";
+export const btnPlain = "pressable inline-flex items-center gap-1 text-15 font-medium text-tint hover:opacity-70";

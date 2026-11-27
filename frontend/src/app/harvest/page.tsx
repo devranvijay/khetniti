@@ -30,7 +30,7 @@ export default function HarvestPage() {
             <Card className="lg:col-span-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="text-[13px] font-medium text-label-2">Next 3 days · {data.location.name}</div>
+                  <div className="text-13 font-medium text-label-2">Next 3 days · {data.location.name}</div>
                   <div className="mt-2">
                     <RiskBadge level={data.risk.level} large />
                   </div>
@@ -39,15 +39,15 @@ export default function HarvestPage() {
                   <div className="flex items-center gap-2.5 rounded-[14px] bg-surface-2 px-3.5 py-2.5">
                     <CalendarCheck className="size-5 text-green" />
                     <div>
-                      <div className="text-[12px] text-label-2">Longest low-risk stretch</div>
-                      <div className="text-[15px] font-semibold">
+                      <div className="text-12 text-label-2">Longest low-risk stretch</div>
+                      <div className="text-15 font-semibold">
                         {shortDate(data.risk.suggested_window.start)} – {shortDate(data.risk.suggested_window.end)} · {data.risk.suggested_window.days} days
                       </div>
                     </div>
                   </div>
                 )}
               </div>
-              <ul className="mt-4 space-y-1.5 text-[15px]">
+              <ul className="mt-4 space-y-1.5 text-15">
                 {data.risk.reasons.map((r) => (
                   <li key={r} className="flex gap-2">
                     <span className="mt-2 size-1.5 shrink-0 rounded-full" style={{ background: RISK_COLOR[data.risk.level] }} />
@@ -64,7 +64,7 @@ export default function HarvestPage() {
               <SectionHeader title="Suggested actions" />
               <List>
                 {data.risk.actions.map((a) => (
-                  <Row key={a} icon={<CircleCheck className="size-5 shrink-0 text-tint" />} label={<span className="text-[14px]">{a}</span>} />
+                  <Row key={a} icon={<CircleCheck className="size-5 shrink-0 text-tint" />} label={<span className="text-14">{a}</span>} />
                 ))}
               </List>
             </div>
@@ -78,16 +78,16 @@ export default function HarvestPage() {
                 return (
                   <Card key={d.date} className="!p-4" pad>
                     <div className="flex items-center justify-between">
-                      <span className="text-[13px] font-semibold">{i === 0 ? "Today" : weekday(d.date)}</span>
+                      <span className="text-13 font-semibold">{i === 0 ? "Today" : weekday(d.date)}</span>
                       <span className="size-2 rounded-full" style={{ background: RISK_COLOR[r.level] }} title={`${r.level} risk`} />
                     </div>
-                    <div className="text-[12px] text-label-2">{shortDate(d.date)}</div>
-                    <div className="my-2 text-[30px] leading-none">{wxIcon(d.weather_code)}</div>
-                    <div className="text-[12px] text-label-2">{wxLabel(d.weather_code)}</div>
-                    <div className="mt-1 text-[17px] font-semibold tabular-nums">
+                    <div className="text-12 text-label-2">{shortDate(d.date)}</div>
+                    <div className="my-2 text-30 leading-none">{wxIcon(d.weather_code)}</div>
+                    <div className="text-12 text-label-2">{wxLabel(d.weather_code)}</div>
+                    <div className="mt-1 text-17 font-semibold tabular-nums">
                       {Math.round(d.tmax)}° <span className="font-normal text-label-2">{Math.round(d.tmin)}°</span>
                     </div>
-                    <dl className="mt-2 space-y-0.5 text-[12px] text-label-2">
+                    <dl className="mt-2 space-y-0.5 text-12 text-label-2">
                       <div className="flex justify-between">
                         <dt>Rain</dt>
                         <dd className="tabular-nums text-label">{d.rain_mm.toFixed(1)} mm</dd>
@@ -105,7 +105,7 @@ export default function HarvestPage() {
                         <dd className="tabular-nums text-label">{Math.round(d.wind_kmh)} km/h</dd>
                       </div>
                     </dl>
-                    {r.reasons.length > 0 && <div className="mt-2 text-[11px] leading-snug" style={{ color: RISK_COLOR[r.level] }}>{r.reasons.join("; ")}</div>}
+                    {r.reasons.length > 0 && <div className="mt-2 text-11 leading-snug" style={{ color: RISK_COLOR[r.level] }}>{r.reasons.join("; ")}</div>}
                   </Card>
                 );
               })}
@@ -122,7 +122,7 @@ export default function HarvestPage() {
             <SectionHeader title="How risk is calculated" />
             <List>
               {data.risk.rules.map((r) => (
-                <Row key={r} icon={<Info className="size-4 shrink-0 text-blue" />} label={<span className="text-[14px]">{r}</span>} />
+                <Row key={r} icon={<Info className="size-4 shrink-0 text-blue" />} label={<span className="text-14">{r}</span>} />
               ))}
             </List>
           </div>

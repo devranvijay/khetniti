@@ -35,7 +35,25 @@
 
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
   --seg-thumb: #ffffff;
+  --float: rgba(250, 250, 252, 0.7); /* floating glass: tab bar, toast, tooltip */
+  --glass-edge: rgba(255, 255, 255, 0.7); /* bright top edge = light catching the material */
+  --float-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.06);
   color-scheme: light;
+
+  /*
+    Springs (WWDC "Designing Fluid Interfaces"): critically damped, damping 1.0.
+    The curve is x(t) = 1 - (1 + wt)e^(-wt), w = 2pi / response, sampled into linear().
+    Critically damped springs are self-similar, so one curve serves every response; the
+    duration sets the response: 500ms = response 0.4 (moves), 380ms = response 0.3 (controls).
+  */
+  --spring: cubic-bezier(0.25, 1, 0.5, 1);
+  --spring-move: 500ms;
+  --spring-snap: 380ms;
+}
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --spring: linear(0, 0.0374, 0.1233, 0.2298, 0.3404, 0.4456, 0.5409, 0.6241, 0.6952, 0.7547, 0.8039, 0.8442, 0.8767, 0.9029, 0.9238, 0.9404, 0.9536, 0.9639, 0.972, 0.9783, 0.9833, 0.9871, 0.9901, 0.9924, 0.9941, 0.9955, 1);
+  }
 }
 
 /* Dark tokens apply when the user picks Dark, or picks System and the OS is dark. */
@@ -70,6 +88,9 @@
   
   --shadow: none;
   --seg-thumb: #636366;
+  --float: rgba(44, 44, 46, 0.66);
+  --glass-edge: rgba(255, 255, 255, 0.14);
+  --float-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -103,6 +124,9 @@
     
     --shadow: none;
     --seg-thumb: #636366;
+    --float: rgba(44, 44, 46, 0.66);
+    --glass-edge: rgba(255, 255, 255, 0.14);
+    --float-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -135,11 +159,67 @@
 
   --shadow-card: var(--shadow);
   --color-seg-thumb: var(--seg-thumb);
+  --color-float: var(--float);
+
+  /*
+    Type scale. Tracking is size-specific (Inter dynamic metrics, close to SF Pro's tracking table):
+    small text opens up, large text tightens. Leading tightens as size grows (iOS text styles).
+    Use text-<px>, e.g. text-15. Explicit leading-* / tracking-* classes still override.
+  */
+  --text-10: 10px;
+  --text-10--line-height: 12px;
+  --text-10--letter-spacing: 0.01em;
+  --text-11: 11px;
+  --text-11--line-height: 13px;
+  --text-11--letter-spacing: 0.005em;
+  --text-12: 12px;
+  --text-12--line-height: 16px;
+  --text-12--letter-spacing: 0em;
+  --text-13: 13px;
+  --text-13--line-height: 18px;
+  --text-13--letter-spacing: -0.003em;
+  --text-14: 14px;
+  --text-14--line-height: 20px;
+  --text-14--letter-spacing: -0.006em;
+  --text-15: 15px;
+  --text-15--line-height: 20px;
+  --text-15--letter-spacing: -0.009em;
+  --text-17: 17px;
+  --text-17--line-height: 22px;
+  --text-17--letter-spacing: -0.013em;
+  --text-18: 18px;
+  --text-18--line-height: 23px;
+  --text-18--letter-spacing: -0.014em;
+  --text-20: 20px;
+  --text-20--line-height: 25px;
+  --text-20--letter-spacing: -0.017em;
+  --text-22: 22px;
+  --text-22--line-height: 28px;
+  --text-22--letter-spacing: -0.018em;
+  --text-24: 24px;
+  --text-24--line-height: 30px;
+  --text-24--letter-spacing: -0.019em;
+  --text-28: 28px;
+  --text-28--line-height: 34px;
+  --text-28--letter-spacing: -0.021em;
+  --text-30: 30px;
+  --text-30--line-height: 36px;
+  --text-30--letter-spacing: -0.021em;
+  --text-32: 32px;
+  --text-32--line-height: 38px;
+  --text-32--letter-spacing: -0.022em;
+  --text-34: 34px;
+  --text-34--line-height: 41px;
+  --text-34--letter-spacing: -0.022em;
+  --text-40: 40px;
+  --text-40--line-height: 46px;
+  --text-40--letter-spacing: -0.022em;
 }
 
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation; /* no 300ms double-tap delay on the input path */
 }
 
 body {
@@ -147,7 +227,23 @@ body {
   color: var(--label);
   font-family: var(--font-sans);
   font-feature-settings: "tnum" 1;
-  letter-spacing: -0.006em;
+  font-optical-sizing: auto;
+  letter-spacing: -0.011em; /* 16px default; text-<px> classes set their own */
+}
+
+/* Devanagari is never tracked: spacing between letters breaks conjunct shaping. */
+.font-hindi {
+  letter-spacing: 0;
+}
+
+/* Keyboard focus: a clear tint ring, never shown for pointer presses. */
+:focus-visible {
+  outline: 2px solid var(--tint);
+  outline-offset: 2px;
+}
+input:focus-visible,
+select:focus-visible {
+  outline: none; /* fields draw their own focus ring */
 }
 
 ::selection {
@@ -184,8 +280,10 @@ select {
 .recharts-default-tooltip {
   border-radius: 12px !important;
   border: none !important;
-  background: var(--surface) !important;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  background: var(--float) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: inset 0 0.5px 0 var(--glass-edge), var(--float-shadow);
   font-size: 12px;
 }
 .recharts-legend-item-text {
@@ -233,7 +331,10 @@ select {
   display: grid;
   place-items: center;
   background: radial-gradient(ellipse at center, #0c3d34 0%, #062921 75%);
-  transition: opacity 450ms ease, visibility 450ms ease;
+  transition:
+    opacity 450ms ease,
+    visibility 450ms ease,
+    transform var(--spring-move) var(--spring);
 }
 .splash video {
   width: 100%;
@@ -248,6 +349,7 @@ select {
 .splash[data-state="leaving"] {
   opacity: 0;
   visibility: hidden;
+  transform: scale(1.06);
 }
 :root[data-splash="seen"] .splash {
   display: none;
@@ -257,3 +359,159 @@ select {
 :where(.grid) > * {
   min-width: 0;
 }
+
+/* ================================================================ fluid interaction layer */
+
+/*
+  Press feedback lands on pointer-down and is instant (80ms in); the release springs back.
+  Use on buttons and tappable cards. `highlight` is the list-row equivalent (iOS cell highlight).
+*/
+@utility pressable {
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform var(--spring-snap) var(--spring),
+    background-color 200ms ease,
+    opacity 200ms ease,
+    filter 200ms ease;
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+    transition-duration: 80ms;
+    transition-timing-function: ease-out;
+  }
+}
+@utility highlight {
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 300ms ease;
+  &:active {
+    background-color: var(--fill-strong);
+    transition-duration: 0s;
+  }
+}
+
+/*
+  Materials. Weight encodes hierarchy: the sidebar is the heaviest (structure), bars are
+  medium, floating controls are lightest with a bright top edge. Content scrolls underneath.
+*/
+@utility material-sidebar {
+  background: var(--sidebar);
+  -webkit-backdrop-filter: blur(40px) saturate(150%);
+  backdrop-filter: blur(40px) saturate(150%);
+}
+@utility material-bar {
+  background: var(--material);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+}
+@utility material-float {
+  background: var(--float);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow:
+    inset 0 0.5px 0 var(--glass-edge),
+    var(--float-shadow);
+}
+
+/* Sliding selection (segmented thumb, tab-bar lens, sidebar pill): interruptible springs. */
+@utility slide {
+  transition: transform var(--spring-move) var(--spring);
+  will-change: transform;
+}
+
+/* New content materializes: a short rise from where it will rest, on a spring. */
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@utility enter {
+  animation: enter var(--spring-move) var(--spring) backwards;
+}
+
+/* Toast: enters and leaves along the same path (up from, and back down to, the bottom). */
+@utility toast {
+  transition:
+    transform var(--spring-move) var(--spring),
+    opacity 250ms ease;
+  &[data-open="false"] {
+    transform: translate(-50%, calc(100% + 32px));
+    opacity: 0;
+    pointer-events: none;
+  }
+  &[data-open="true"] {
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Theme changes cross-fade instead of jumping in brightness. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 320ms;
+  animation-timing-function: ease;
+}
+
+/* ================================================================ accessibility settings */
+
+/* Reduced motion: keep the feedback, drop the travel. Cross-fades replace slides and springs. */
+@media (prefers-reduced-motion: reduce) {
+  .slide,
+  .toast {
+    transition-duration: 0s, 200ms;
+  }
+  .pressable:active:not(:disabled) {
+    transform: none;
+    opacity: 0.7;
+  }
+  @keyframes enter {
+    from {
+      opacity: 0;
+    }
+  }
+  .enter {
+    animation-duration: 200ms;
+    animation-timing-function: ease;
+  }
+  .animate-pulse {
+    animation: none;
+  }
+  .splash[data-state="leaving"] {
+    transform: none;
+  }
+}
+
+/* Reduced transparency: materials turn solid and frosted blur is dropped. */
+@media (prefers-reduced-transparency: reduce) {
+  :root:root:root {
+    --material: var(--surface);
+    --sidebar: var(--surface);
+    --float: var(--surface);
+  }
+  .material-sidebar,
+  .material-bar,
+  .material-float,
+  .recharts-default-tooltip {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+/*
+  Increased contrast: stronger secondary text and separators, solid bars with a defined edge.
+  (:root:root:root outranks the light/dark token selectors so this applies in both themes.)
+*/
+@media (prefers-contrast: more) {
+  :root:root:root {
+    --label-2: color-mix(in srgb, var(--label) 82%, transparent);
+    --label-3: color-mix(in srgb, var(--label) 62%, transparent);
+    --separator: color-mix(in srgb, var(--label) 38%, transparent);
+    --material: var(--surface);
+    --sidebar: var(--surface);
+    --float: var(--surface);
+    --glass-edge: var(--separator);
+  }
+  .material-float {
+    outline: 1px solid var(--separator);
+  }
+}
+
+/* end of fluid interaction layer */

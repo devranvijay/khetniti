@@ -61,6 +61,7 @@ function Advisor() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [runs, setRuns] = useState(0);
 
   const localMandi = form.local_mandi || latest.data?.local_mandi || "";
   const set = (k: keyof Form) => (e: { target: { value: string } }) => setForm({ ...form, [k]: e.target.value });
@@ -88,6 +89,7 @@ function Advisor() {
       });
       if (!res.ok) setError(res.message ?? "No recommendation could be made.");
       setAdvice(res.ok ? res : null);
+      setRuns((r) => r + 1);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -182,12 +184,16 @@ function Advisor() {
                 <div className="mx-auto mb-3 grid size-14 place-items-center rounded-[16px] bg-tint/12 text-tint">
                   <Sparkles className="size-7" />
                 </div>
-                <h3 className="text-[20px] font-semibold">Ready when you are</h3>
-                <p className="mt-1 text-[15px] text-label-2">Enter your quantity and costs, then tap Get recommendation. Every number in the result shows how it was calculated.</p>
+                <h3 className="text-20 font-semibold">Ready when you are</h3>
+                <p className="mt-1 text-15 text-label-2">Enter your quantity and costs, then tap Get recommendation. Every number in the result shows how it was calculated.</p>
               </div>
             </Card>
           )}
-          {advice && <AdviceResult a={advice} onSave={save} saved={saved} />}
+          {advice && (
+            <div key={runs} className="enter space-y-5">
+              <AdviceResult a={advice} onSave={save} saved={saved} />
+            </div>
+          )}
         </div>
       </div>
     </>
@@ -201,18 +207,17 @@ function AdviceResult({ a, onSave, saved }: { a: Advice; onSave: () => void; sav
       <HeroCard>
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div className="max-w-lg">
-            <div className="flex flex-wrap items-center gap-2 text-[13px] text-white/70">
+            <div className="flex flex-wrap items-center gap-2 text-13 text-white/70">
               Recommendation · prices as of {longDate(a.reference_date)}
-              {a.provenance.mode === "demo" && <span className="rounded-full bg-[#FF9500] px-2 py-0.5 text-[11px] font-semibold text-white">DEMO DATA</span>}
             </div>
-            <h2 className="mt-2 text-[22px] font-bold leading-tight tracking-[-0.02em] sm:text-[28px]">{a.headline}</h2>
-            <div className="mt-3 inline-flex rounded-full bg-white/15 px-3 py-1 text-[13px] font-medium">Confidence: {a.confidence}</div>
+            <h2 className="mt-2 text-22 font-bold leading-tight sm:text-28">{a.headline}</h2>
+            <div className="mt-3 inline-flex rounded-full bg-white/15 px-3 py-1 text-13 font-medium">Confidence: {a.confidence}</div>
           </div>
           <div className="sm:text-right">
-            <div className="text-[13px] text-white/70">Estimated net revenue</div>
-            <div className="text-[32px] font-bold tracking-[-0.03em] text-[#F2BB3C] sm:text-[40px]">{inr(a.estimated_net.net)}</div>
+            <div className="text-13 text-white/70">Estimated net revenue</div>
+            <div className="text-32 font-bold text-[#F2BB3C] sm:text-40">{inr(a.estimated_net.net)}</div>
             {a.action === "WAIT" && (
-              <div className="text-[13px] text-white/70">
+              <div className="text-13 text-white/70">
                 80% range {inr(a.estimated_net.low)} – {inr(a.estimated_net.high)}
               </div>
             )}
@@ -225,7 +230,7 @@ function AdviceResult({ a, onSave, saved }: { a: Advice; onSave: () => void; sav
           <SectionHeader title="Why" />
           <List>
             {a.reasons.map((r) => (
-              <Row key={r} icon={<CircleCheck className="size-5 shrink-0 text-tint" />} label={<span className="text-[14px]">{r}</span>} />
+              <Row key={r} icon={<CircleCheck className="size-5 shrink-0 text-tint" />} label={<span className="text-14">{r}</span>} />
             ))}
           </List>
         </div>
@@ -256,20 +261,20 @@ function AdviceResult({ a, onSave, saved }: { a: Advice; onSave: () => void; sav
             return (
               <div key={o.market_id} className={`flex items-start gap-3 border-t border-separator px-5 py-3 ${isBest ? "bg-tint/8" : ""} ${o.stale ? "opacity-50" : ""}`}>
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-1.5 text-[15px] font-medium">
+                  <div className="flex flex-wrap items-center gap-1.5 text-15 font-medium">
                     {o.market_name.replace(" APMC", "")}
                     {isBest && <Badge>Best</Badge>}
                     {o.is_local && <Badge color="var(--label-2)">Local</Badge>}
                     {o.stale && <Badge color="var(--red)">Stale</Badge>}
                   </div>
-                  <div className="text-[12px] text-label-2">
+                  <div className="text-12 text-label-2">
                     {inr(o.price_per_q)}/q · gross {inr(o.gross)} · transport −{inr(o.transport)} · other −{inr(o.handling + o.market_fee)}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[17px] font-semibold tabular-nums">{inr(o.net)}</div>
+                  <div className="text-17 font-semibold tabular-nums">{inr(o.net)}</div>
                   {diff != null && !o.is_local && (
-                    <div className="text-[12px] tabular-nums" style={{ color: diff >= 0 ? "var(--green)" : "var(--red)" }}>
+                    <div className="text-12 tabular-nums" style={{ color: diff >= 0 ? "var(--green)" : "var(--red)" }}>
                       {diff >= 0 ? "+" : "−"}
                       {inr(Math.abs(diff))}
                     </div>
@@ -280,9 +285,9 @@ function AdviceResult({ a, onSave, saved }: { a: Advice; onSave: () => void; sav
           })}
         </div>
         <div className="hidden overflow-x-auto md:block">
-          <table className="w-full min-w-[680px] text-[14px]">
+          <table className="w-full min-w-[680px] text-14">
             <thead>
-              <tr className="text-left text-[12px] text-label-2">
+              <tr className="text-left text-12 text-label-2">
                 <th className="px-5 py-2 font-medium">Mandi</th>
                 <th className="px-3 py-2 text-right font-medium">Modal</th>
                 <th className="px-3 py-2 text-right font-medium">Gross</th>
@@ -304,7 +309,7 @@ function AdviceResult({ a, onSave, saved }: { a: Advice; onSave: () => void; sav
                         {o.is_local && <Badge color="var(--label-2)">Local</Badge>}
                         {o.stale && <Badge color="var(--red)">Stale</Badge>}
                       </div>
-                      <div className="text-[12px] text-label-2">{o.transport_basis}</div>
+                      <div className="text-12 text-label-2">{o.transport_basis}</div>
                     </td>
                     <td className="px-3 py-3 text-right tabular-nums">{inr(o.price_per_q)}</td>
                     <td className="px-3 py-3 text-right tabular-nums text-label-2">{inr(o.gross)}</td>
@@ -330,22 +335,22 @@ function AdviceResult({ a, onSave, saved }: { a: Advice; onSave: () => void; sav
         ) : (
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-[14px] bg-surface-2 p-4">
-              <div className="text-[13px] font-medium text-label-2">Sell today</div>
-              <div className="mt-1 text-[22px] font-semibold tabular-nums">{inr(a.best_now.net)}</div>
-              <div className="text-[12px] text-label-2">at {inr(a.best_now.price_per_q)}/q</div>
+              <div className="text-13 font-medium text-label-2">Sell today</div>
+              <div className="mt-1 text-22 font-semibold tabular-nums">{inr(a.best_now.net)}</div>
+              <div className="text-12 text-label-2">at {inr(a.best_now.price_per_q)}/q</div>
             </div>
             {a.scenarios.map((s) => {
               const better = s.expected.net > a.best_now.net;
               return (
                 <div key={s.days} className={`rounded-[14px] p-4 ${a.action === "WAIT" && a.wait_days === s.days ? "bg-tint/10 ring-1 ring-tint/40" : "bg-surface-2"}`}>
-                  <div className="text-[13px] font-medium text-label-2">Wait {s.days} days</div>
-                  <div className="mt-1 text-[22px] font-semibold tabular-nums" style={{ color: better ? "var(--green)" : undefined }}>
+                  <div className="text-13 font-medium text-label-2">Wait {s.days} days</div>
+                  <div className="mt-1 text-22 font-semibold tabular-nums" style={{ color: better ? "var(--green)" : undefined }}>
                     {inr(s.expected.net)}
                   </div>
-                  <div className="text-[12px] text-label-2">
+                  <div className="text-12 text-label-2">
                     Range {inr(s.net_low)} – {inr(s.net_high)}
                   </div>
-                  <div className="mt-1 text-[12px] text-label-2">
+                  <div className="mt-1 text-12 text-label-2">
                     ~{inr(s.price_expected)}/q · −{s.loss_pct}% weight{s.expected.storage > 0 ? ` · −${inr(s.expected.storage)} storage` : ""}
                   </div>
                 </div>
@@ -354,7 +359,7 @@ function AdviceResult({ a, onSave, saved }: { a: Advice; onSave: () => void; sav
           </div>
         )}
         {a.trend && (
-          <p className="mt-3 text-[13px] text-label-2">
+          <p className="mt-3 text-13 text-label-2">
             Trend {a.trend.slope_pct_per_day > 0 ? "+" : ""}
             {a.trend.slope_pct_per_day}%/day over {a.trend.points} price days ({longDate(a.trend.from)} – {longDate(a.trend.to)}); half of it is carried forward. Day-to-day volatility{" "}
             {a.trend.volatility_pct_per_day}%. {a.formulas.wait_price}.

@@ -6,7 +6,8 @@ import { Splash } from "@/components/Splash";
 import "./globals.css";
 
 // SF Pro is used on Apple devices via the system stack; Inter is the fallback elsewhere.
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
+// The optical-size axis lets Inter change shape with size, as SF Pro does.
+const inter = Inter({ variable: "--font-inter", subsets: ["latin"], axes: ["opsz"] });
 const sora = Sora({ variable: "--font-sora", subsets: ["latin"], weight: ["400", "700"] });
 const hind = Hind({ variable: "--font-hind", subsets: ["devanagari", "latin"], weight: ["400", "500", "600"] });
 
@@ -30,8 +31,9 @@ export const viewport: Viewport = {
  * Runs before first paint:
  *  - applies the saved theme ("light" | "dark"; absent = follow the system)
  *  - hides the splash if it was already shown in this browser session
+ *  - registers a passive touchstart listener so iOS Safari applies :active press states on touch-down
  */
-const BOOT = `(function(){var d=document.documentElement;try{var t=localStorage.getItem("khetniti.theme");if(t==="light"||t==="dark")d.setAttribute("data-theme",t)}catch(e){}try{if(sessionStorage.getItem("khetniti.splash"))d.setAttribute("data-splash","seen")}catch(e){}})()`;
+const BOOT = `(function(){var d=document.documentElement;try{var t=localStorage.getItem("khetniti.theme");if(t==="light"||t==="dark")d.setAttribute("data-theme",t)}catch(e){}try{if(sessionStorage.getItem("khetniti.splash"))d.setAttribute("data-splash","seen")}catch(e){}document.addEventListener("touchstart",function(){},{passive:true})})()`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

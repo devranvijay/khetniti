@@ -54,8 +54,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const setTheme = (t: ThemePref) => {
     setThemeState(t);
     const root = document.documentElement;
-    if (t === "system") root.removeAttribute("data-theme");
-    else root.setAttribute("data-theme", t);
+    const apply = () => (t === "system" ? root.removeAttribute("data-theme") : root.setAttribute("data-theme", t));
+    // Cross-fade between appearances instead of an abrupt brightness jump (where supported).
+    const doc = document as Document & { startViewTransition?: (update: () => void) => unknown };
+    if (doc.startViewTransition) doc.startViewTransition(apply);
+    else apply();
     try {
       if (t === "system") localStorage.removeItem(THEME_KEY);
       else localStorage.setItem(THEME_KEY, t);

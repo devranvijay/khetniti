@@ -55,8 +55,8 @@ export default function MandiPage() {
           <Card pad={false}>
             <div className="flex flex-wrap items-center justify-between gap-2 px-5 pb-2 pt-5">
               <div>
-                <h3 className="text-[17px] font-semibold">Latest prices</h3>
-                <p className="text-[13px] text-label-2">Sorted by distance from your farm. Tap a row to inspect it below.</p>
+                <h3 className="text-17 font-semibold">Latest prices</h3>
+                <p className="text-13 text-label-2">Sorted by distance from your farm. Tap a row to inspect it below.</p>
               </div>
               <ProvenanceBadge p={latest.data.provenance} />
             </div>
@@ -65,23 +65,25 @@ export default function MandiPage() {
               {markets.map((m) => (
                 <button
                   key={m.market_id}
+                  type="button"
+                  aria-pressed={m.market_id === focusId}
                   onClick={() => setFocus(m.market_id)}
-                  className={`flex w-full items-start gap-3 border-t border-separator px-5 py-3 text-left ${m.market_id === focusId ? "bg-tint/8" : ""}`}
+                  className={`highlight flex w-full items-start gap-3 border-t border-separator px-5 py-3 text-left ${m.market_id === focusId ? "bg-tint/8" : ""}`}
                 >
                   <span className="mt-1.5 size-2.5 shrink-0 rounded-full" style={{ background: colorOf(m.market_id) }} />
                   <span className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-center gap-1.5 text-[15px] font-medium">
+                    <span className="flex flex-wrap items-center gap-1.5 text-15 font-medium">
                       {m.market_name.replace(" APMC", "")}
                       {m.market_id === latest.data!.local_mandi && <Badge>Local</Badge>}
                       {m.stale && <Badge color="var(--red)">{m.age_days}d old</Badge>}
                     </span>
-                    <span className="block text-[12px] text-label-2">
+                    <span className="block text-12 text-label-2">
                       {inr(m.min_price)} – {inr(m.max_price)} · {m.distance_km} km{m.arrivals_tonnes != null ? ` · ${num(m.arrivals_tonnes)} t` : ""} · {shortDate(m.date)}
                     </span>
                   </span>
                   <span className="text-right">
-                    <span className="block text-[17px] font-semibold tabular-nums">{inr(m.modal_price)}</span>
-                    <span className="block text-[12px] tabular-nums" style={{ color: m.change_7d_pct == null ? undefined : m.change_7d_pct >= 0 ? "var(--green)" : "var(--red)" }}>
+                    <span className="block text-17 font-semibold tabular-nums">{inr(m.modal_price)}</span>
+                    <span className="block text-12 tabular-nums" style={{ color: m.change_7d_pct == null ? undefined : m.change_7d_pct >= 0 ? "var(--green)" : "var(--red)" }}>
                       {pct(m.change_7d_pct)}
                     </span>
                   </span>
@@ -90,9 +92,9 @@ export default function MandiPage() {
             </div>
             {/* Tablets and up: full table */}
             <div className="hidden overflow-x-auto md:block">
-              <table className="w-full min-w-[720px] text-[14px]">
+              <table className="w-full min-w-[720px] text-14">
                 <thead>
-                  <tr className="text-left text-[12px] text-label-2">
+                  <tr className="text-left text-12 text-label-2">
                     <th className="px-5 py-2 font-medium">Mandi</th>
                     <th className="px-3 py-2 text-right font-medium">Min</th>
                     <th className="px-3 py-2 text-right font-medium">Modal</th>
@@ -108,7 +110,7 @@ export default function MandiPage() {
                     <tr
                       key={m.market_id}
                       onClick={() => setFocus(m.market_id)}
-                      className={`cursor-pointer border-t border-separator transition hover:bg-fill ${m.market_id === focusId ? "bg-tint/8" : ""}`}
+                      className={`highlight cursor-pointer border-t border-separator hover:bg-fill ${m.market_id === focusId ? "bg-tint/8" : ""}`}
                     >
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2">
@@ -153,8 +155,10 @@ export default function MandiPage() {
                 return (
                   <button
                     key={m.market_id}
+                    type="button"
+                    aria-pressed={on}
                     onClick={() => toggle(m.market_id)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-medium transition ${on ? "bg-surface-2 text-label ring-1 ring-separator" : "text-label-3"}`}
+                    className={`pressable inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 py-1 text-13 font-medium ${on ? "bg-surface-2 text-label ring-1 ring-separator" : "text-label-3 hover:text-label-2"}`}
                   >
                     <span className="size-2 rounded-full" style={{ background: on ? colorOf(m.market_id) : "var(--label-3)" }} />
                     {m.market_name.replace(" APMC", "")}

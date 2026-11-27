@@ -35,7 +35,7 @@ export const post = <T,>(path: string, body: unknown) => api<T>(path, { method: 
 // ---------- types (mirror backend responses)
 
 export type Provenance = {
-  mode: "live" | "historical" | "demo";
+  mode: "live" | "historical";
   label: string;
   source: string;
   notice: string | null;
