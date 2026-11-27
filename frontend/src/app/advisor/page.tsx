@@ -122,9 +122,9 @@ function Advisor() {
     <>
       <LargeTitle title="Smart Sell Advisor" hindi="बिक्री सलाह" subtitle="Compare every mandi on what you actually take home, then decide whether to sell now or wait." />
 
-      <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
-        {/* Inputs */}
-        <div className="space-y-4">
+      <div className="grid gap-6 xl:grid-cols-[340px_1fr]">
+        {/* Inputs: two columns on tablets, a sidebar column on wide screens */}
+        <div className="grid content-start gap-4 md:grid-cols-2 xl:grid-cols-1">
           <Card>
             <CardTitle title="Your harvest" />
             <div className="space-y-3.5">
@@ -167,7 +167,7 @@ function Advisor() {
               </div>
             </div>
           </Card>
-          <button className={`${btnPrimary} w-full`} disabled={!valid || busy} onClick={run}>
+          <button className={`${btnPrimary} w-full md:col-span-2 xl:col-span-1`} disabled={!valid || busy} onClick={run}>
             <Sparkles className="size-4" /> {busy ? "Calculating…" : "Get recommendation"}
           </button>
           {latest.error && <ErrorBox message={latest.error} onRetry={latest.reload} />}
@@ -205,12 +205,12 @@ function AdviceResult({ a, onSave, saved }: { a: Advice; onSave: () => void; sav
               Recommendation · prices as of {longDate(a.reference_date)}
               {a.provenance.mode === "demo" && <span className="rounded-full bg-[#FF9500] px-2 py-0.5 text-[11px] font-semibold text-white">DEMO DATA</span>}
             </div>
-            <h2 className="mt-2 text-[28px] font-bold leading-tight tracking-[-0.02em]">{a.headline}</h2>
+            <h2 className="mt-2 text-[22px] font-bold leading-tight tracking-[-0.02em] sm:text-[28px]">{a.headline}</h2>
             <div className="mt-3 inline-flex rounded-full bg-white/15 px-3 py-1 text-[13px] font-medium">Confidence: {a.confidence}</div>
           </div>
           <div className="sm:text-right">
             <div className="text-[13px] text-white/70">Estimated net revenue</div>
-            <div className="text-[40px] font-bold tracking-[-0.03em] text-[#F2BB3C]">{inr(a.estimated_net.net)}</div>
+            <div className="text-[32px] font-bold tracking-[-0.03em] text-[#F2BB3C] sm:text-[40px]">{inr(a.estimated_net.net)}</div>
             {a.action === "WAIT" && (
               <div className="text-[13px] text-white/70">
                 80% range {inr(a.estimated_net.low)} – {inr(a.estimated_net.high)}
@@ -248,7 +248,38 @@ function AdviceResult({ a, onSave, saved }: { a: Advice; onSave: () => void; sav
         <div className="px-5 pt-5">
           <CardTitle title="Sell now: every mandi compared" subtitle="Net = Gross − Transport − Handling − Market fee" />
         </div>
-        <div className="overflow-x-auto">
+        {/* Phones: one row per mandi */}
+        <div className="md:hidden">
+          {a.options.map((o) => {
+            const isBest = o.market_id === a.best_now.market_id;
+            const diff = a.local ? o.net - a.local.net : null;
+            return (
+              <div key={o.market_id} className={`flex items-start gap-3 border-t border-separator px-5 py-3 ${isBest ? "bg-tint/8" : ""} ${o.stale ? "opacity-50" : ""}`}>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5 text-[15px] font-medium">
+                    {o.market_name.replace(" APMC", "")}
+                    {isBest && <Badge>Best</Badge>}
+                    {o.is_local && <Badge color="var(--label-2)">Local</Badge>}
+                    {o.stale && <Badge color="var(--red)">Stale</Badge>}
+                  </div>
+                  <div className="text-[12px] text-label-2">
+                    {inr(o.price_per_q)}/q · gross {inr(o.gross)} · transport −{inr(o.transport)} · other −{inr(o.handling + o.market_fee)}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[17px] font-semibold tabular-nums">{inr(o.net)}</div>
+                  {diff != null && !o.is_local && (
+                    <div className="text-[12px] tabular-nums" style={{ color: diff >= 0 ? "var(--green)" : "var(--red)" }}>
+                      {diff >= 0 ? "+" : "−"}
+                      {inr(Math.abs(diff))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[680px] text-[14px]">
             <thead>
               <tr className="text-left text-[12px] text-label-2">

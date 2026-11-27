@@ -14,7 +14,7 @@ export function Card({ children, className = "", pad = true }: { children: React
 export function HeroCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <section
-      className={`relative overflow-hidden rounded-[22px] p-6 text-white shadow-card ${className}`}
+      className={`relative overflow-hidden rounded-[22px] p-5 text-white shadow-card sm:p-6 ${className}`}
       style={{ background: "linear-gradient(145deg, #1E6B4B 0%, #0D3B2B 70%)" }}
     >
       {children}
@@ -24,13 +24,13 @@ export function HeroCard({ children, className = "" }: { children: React.ReactNo
 
 export function LargeTitle({ title, hindi, subtitle, children }: { title: string; hindi?: string; subtitle?: string; children?: React.ReactNode }) {
   return (
-    <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 className="text-[34px] font-bold leading-[41px] tracking-[-0.022em] text-label">
+    <header className="mb-5 flex flex-wrap items-end justify-between gap-4 md:mb-6">
+      <div className="min-w-0">
+        <h1 className="text-[28px] font-bold leading-[34px] tracking-[-0.022em] text-label md:text-[34px] md:leading-[41px]">
           {title}
-          {hindi && <span className="ml-2.5 font-hindi text-[22px] font-medium tracking-normal text-label-2">{hindi}</span>}
+          {hindi && <span className="ml-2 inline-block font-hindi text-[18px] font-medium tracking-normal text-label-2 md:ml-2.5 md:text-[22px]">{hindi}</span>}
         </h1>
-        {subtitle && <p className="mt-1 max-w-2xl text-[15px] text-label-2">{subtitle}</p>}
+        {subtitle && <p className="mt-1 max-w-2xl text-[14px] text-label-2 md:text-[15px]">{subtitle}</p>}
       </div>
       {children}
     </header>
@@ -74,7 +74,7 @@ export function Row({ label, value, sub, icon, strong = false }: { label: React.
           <div className={`text-[15px] ${strong ? "font-semibold" : ""} text-label`}>{label}</div>
           {sub && <div className="text-[12px] text-label-2">{sub}</div>}
         </div>
-        {value != null && <div className={`text-right text-[15px] tabular-nums ${strong ? "font-semibold text-label" : "text-label-2"}`}>{value}</div>}
+        {value != null && <div className={`max-w-[60%] text-right text-[15px] tabular-nums [overflow-wrap:anywhere] ${strong ? "font-semibold text-label" : "text-label-2"}`}>{value}</div>}
       </div>
     </div>
   );
@@ -203,15 +203,18 @@ export function Segmented<T extends string | number>({
   onChange,
   label,
   size = "md",
+  full = false,
 }: {
-  options: { value: T; label: React.ReactNode }[];
+  options: { value: T; label: React.ReactNode; title?: string }[];
   value: T;
   onChange: (v: T) => void;
   label: string;
   size?: "sm" | "md";
+  /** stretch to the container width (phones) */
+  full?: boolean;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-[9px] bg-fill p-0.5">
+    <div role="radiogroup" aria-label={label} className={`${full ? "flex w-full" : "inline-flex"} rounded-[9px] bg-fill p-0.5`}>
       {options.map((o) => {
         const active = o.value === value;
         return (
@@ -219,9 +222,11 @@ export function Segmented<T extends string | number>({
             key={String(o.value)}
             role="radio"
             aria-checked={active}
+            aria-label={o.title}
+            title={o.title}
             onClick={() => onChange(o.value)}
-            className={`rounded-[7px] font-medium transition-all duration-200 ${size === "sm" ? "px-2.5 py-1 text-[12px]" : "px-3.5 py-1.5 text-[13px]"} ${
-              active ? "bg-surface text-label shadow-[0_1px_3px_rgba(0,0,0,0.12),0_0_0_0.5px_rgba(0,0,0,0.04)] dark:bg-[#636366]" : "text-label hover:opacity-70"
+            className={`inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-[7px] font-medium transition-all duration-200 ${full ? "flex-1" : ""} ${size === "sm" ? "px-2.5 py-1 text-[12px]" : "px-3 py-1.5 text-[13px]"} ${
+              active ? "bg-seg-thumb text-label shadow-[0_1px_3px_rgba(0,0,0,0.12),0_0_0_0.5px_rgba(0,0,0,0.04)]" : "text-label hover:opacity-70"
             }`}
           >
             {o.label}

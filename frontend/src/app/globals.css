@@ -34,10 +34,46 @@
   --brown: #a2845e;
 
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
+  --seg-thumb: #ffffff;
+  color-scheme: light;
 }
 
+/* Dark tokens apply when the user picks Dark, or picks System and the OS is dark. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #000000;
+  --surface: #1c1c1e;
+  --surface-2: #2c2c2e;
+  --fill: rgba(118, 118, 128, 0.24);
+  --fill-strong: rgba(118, 118, 128, 0.36);
+  --label: #f5f5f7;
+  --label-2: rgba(235, 235, 245, 0.62);
+  --label-3: rgba(235, 235, 245, 0.3);
+  --separator: rgba(84, 84, 88, 0.6);
+  --material: rgba(22, 22, 24, 0.72);
+  --sidebar: rgba(28, 28, 30, 0.8);
+  
+  --tint: #3dbe85;
+  --tint-deep: #12402f;
+  --on-tint: #04140d;
+  --gold: #f2bb3c;
+  --gold-text: #f2c14e;
+  
+  --green: #30d158;
+  --orange: #ff9f0a;
+  --red: #ff453a;
+  --blue: #0a84ff;
+  --indigo: #5e5ce6;
+  --teal: #40c8e0;
+  --pink: #ff375f;
+  --brown: #ac8e68;
+  
+  --shadow: none;
+  --seg-thumb: #636366;
+}
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --bg: #000000;
     --surface: #1c1c1e;
     --surface-2: #2c2c2e;
@@ -49,13 +85,13 @@
     --separator: rgba(84, 84, 88, 0.6);
     --material: rgba(22, 22, 24, 0.72);
     --sidebar: rgba(28, 28, 30, 0.8);
-
+    
     --tint: #3dbe85;
     --tint-deep: #12402f;
     --on-tint: #04140d;
     --gold: #f2bb3c;
     --gold-text: #f2c14e;
-
+    
     --green: #30d158;
     --orange: #ff9f0a;
     --red: #ff453a;
@@ -64,8 +100,9 @@
     --teal: #40c8e0;
     --pink: #ff375f;
     --brown: #ac8e68;
-
+    
     --shadow: none;
+    --seg-thumb: #636366;
   }
 }
 
@@ -97,6 +134,7 @@
   --font-brand: var(--font-sora), -apple-system, sans-serif;
 
   --shadow-card: var(--shadow);
+  --color-seg-thumb: var(--seg-thumb);
 }
 
 html {
@@ -166,4 +204,56 @@ select {
     margin: 0 !important;
     padding: 0 !important;
   }
+}
+
+/* Theme-specific artwork: render both variants, show the one that matches the active theme. */
+.only-dark {
+  display: none !important;
+}
+:root[data-theme="dark"] .only-light {
+  display: none !important;
+}
+:root[data-theme="dark"] .only-dark {
+  display: revert !important;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .only-light {
+    display: none !important;
+  }
+  :root:not([data-theme="light"]) .only-dark {
+    display: revert !important;
+  }
+}
+
+/* Splash screen (brand video). Hidden before first paint when already shown this session. */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at center, #0c3d34 0%, #062921 75%);
+  transition: opacity 450ms ease, visibility 450ms ease;
+}
+.splash video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@media (max-aspect-ratio: 1/1) {
+  .splash {
+    background: #09352b;
+  }
+}
+.splash[data-state="leaving"] {
+  opacity: 0;
+  visibility: hidden;
+}
+:root[data-splash="seen"] .splash {
+  display: none;
+}
+
+/* Let grid columns shrink below their content's min width (wide tables/strips scroll inside instead). */
+:where(.grid) > * {
+  min-width: 0;
 }

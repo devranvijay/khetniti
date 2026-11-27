@@ -72,7 +72,7 @@ export default function HarvestPage() {
 
           <div>
             <SectionHeader title="Day by day" />
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7">
               {data.weather.daily.map((d, i) => {
                 const r = data.risk.per_day[i];
                 return (

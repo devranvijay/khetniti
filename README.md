@@ -55,7 +55,26 @@ Tests: `cd backend && .venv/bin/python -m pytest`. They cover the revenue formul
 
 Next.js 16 · TypeScript · Tailwind CSS 4 · Recharts. Python · FastAPI · Pandas · NumPy · SQLAlchemy, with PostgreSQL via `DATABASE_URL` and SQLite as the local default.
 
-The UI follows Apple's Human Interface Guidelines: system font, grouped backgrounds, translucent sidebar, toolbar and tab bar, segmented controls, inset grouped lists, system colours for status, and automatic dark mode. It is tinted with the KHETNITI brand palette. Brand assets are in `KHETNITI Brand Identity-png/`.
+The UI follows Apple's Human Interface Guidelines: system font, grouped backgrounds, translucent sidebar, toolbar and tab bar, segmented controls, inset grouped lists, and system colours for status. It is tinted with the KHETNITI brand palette.
+
+- **Appearance:** System (default), Light or Dark. Switch it in the sidebar or the phone toolbar. The choice is saved in the browser and applied before first paint, so the page never flashes the wrong theme. Brand artwork switches between its light and dark versions automatically.
+- **Responsive:** phone (tab bar, card lists instead of tables, horizontally scrolling strips), tablet (two-column forms), and desktop (sidebar). Checked for horizontal overflow at 360, 390, 820 and 1440 px.
+- **Splash:** the brand intro video plays once per browser session. Desktop and landscape screens play `splash-desktop.mp4` once. Phones and portrait screens loop `splash-mobile.mp4` until the page has loaded. Tap or press any key to skip. With reduced motion, a static logo is shown instead.
+
+## Assets
+
+```
+frontend/
+  assets/brand/        Brand-identity boards (design originals, not served)
+  public/brand/        Web-ready logos generated from the boards: lockup, horizontal, vertical,
+                       mark and Hindi wordmark, each in -light / -dark versions, plus app icons
+  public/splash/       splash-desktop.mp4 (1920×1080, 2.2 s), splash-mobile.mp4 (1080×1920, 1 s loop)
+  src/app/icon.png, apple-icon.png, manifest.ts   Favicon, iOS icon, installable-app manifest
+  scripts/process_brand_assets.py                  Regenerates public/brand and the icons from the boards
+```
+
+After changing a board, regenerate the logos and icons:
+`python3 -m venv /tmp/imgtools && /tmp/imgtools/bin/pip install pillow numpy && /tmp/imgtools/bin/python frontend/scripts/process_brand_assets.py`
 
 ## Demo flow (from the PRD)
 

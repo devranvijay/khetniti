@@ -142,7 +142,7 @@ function Single({ win }: { win: Window }) {
                 What KHETNITI would have said on {longDate(res.as_of)}
                 {res.provenance.mode === "demo" && <span className="ml-2 rounded-full bg-[#FF9500] px-2 py-0.5 text-[11px] font-semibold text-white">DEMO DATA</span>}
               </div>
-              <h2 className="mt-2 text-[24px] font-bold leading-tight tracking-[-0.02em]">{res.advice.headline}</h2>
+              <h2 className="mt-2 text-[20px] font-bold leading-tight tracking-[-0.02em] sm:text-[24px]">{res.advice.headline}</h2>
               <div className="mt-3 text-[13px] text-white/70">Expected net then</div>
               <div className="text-[30px] font-bold text-[#F2BB3C]">{inr(res.advice.estimated_net.net)}</div>
             </HeroCard>

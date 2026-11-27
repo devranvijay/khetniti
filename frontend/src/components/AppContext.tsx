@@ -3,7 +3,12 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { api, type Meta } from "@/lib/api";
 
+export type ThemePref = "system" | "light" | "dark";
+const THEME_KEY = "khetniti.theme";
+
 type Ctx = {
+  theme: ThemePref;
+  setTheme: (t: ThemePref) => void;
   meta: Meta | null;
   metaError: string | null;
   crop: string;
@@ -20,6 +25,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [metaError, setMetaError] = useState<string | null>(null);
   const [crop, setCropState] = useState("tomato");
   const [location, setLocationState] = useState("nashik");
+  const [theme, setThemeState] = useState<ThemePref>("system");
 
   useEffect(() => {
     // Restore the saved selection after mount (reading storage during render would break hydration).
@@ -28,6 +34,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (saved.crop) setCropState(saved.crop);
       if (saved.location) setLocationState(saved.location);
+      const t = localStorage.getItem(THEME_KEY);
+      if (t === "light" || t === "dark") setThemeState(t);
     } catch {}
     api<Meta>("/api/meta")
       .then(setMeta)
@@ -43,12 +51,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCropState(c);
     persist(c, location);
   };
+  const setTheme = (t: ThemePref) => {
+    setThemeState(t);
+    const root = document.documentElement;
+    if (t === "system") root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", t);
+    try {
+      if (t === "system") localStorage.removeItem(THEME_KEY);
+      else localStorage.setItem(THEME_KEY, t);
+    } catch {}
+  };
   const setLocation = (l: string) => {
     setLocationState(l);
     persist(crop, l);
   };
 
-  return <AppCtx.Provider value={{ meta, metaError, crop, location, setCrop, setLocation }}>{children}</AppCtx.Provider>;
+  return <AppCtx.Provider value={{ theme, setTheme, meta, metaError, crop, location, setCrop, setLocation }}>{children}</AppCtx.Provider>;
 }
 
 export function useApp() {

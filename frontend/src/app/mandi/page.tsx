@@ -60,8 +60,37 @@ export default function MandiPage() {
               </div>
               <ProvenanceBadge p={latest.data.provenance} />
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-[14px]">
+            {/* Phones: grouped list */}
+            <div className="md:hidden">
+              {markets.map((m) => (
+                <button
+                  key={m.market_id}
+                  onClick={() => setFocus(m.market_id)}
+                  className={`flex w-full items-start gap-3 border-t border-separator px-5 py-3 text-left ${m.market_id === focusId ? "bg-tint/8" : ""}`}
+                >
+                  <span className="mt-1.5 size-2.5 shrink-0 rounded-full" style={{ background: colorOf(m.market_id) }} />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-1.5 text-[15px] font-medium">
+                      {m.market_name.replace(" APMC", "")}
+                      {m.market_id === latest.data!.local_mandi && <Badge>Local</Badge>}
+                      {m.stale && <Badge color="var(--red)">{m.age_days}d old</Badge>}
+                    </span>
+                    <span className="block text-[12px] text-label-2">
+                      {inr(m.min_price)} – {inr(m.max_price)} · {m.distance_km} km{m.arrivals_tonnes != null ? ` · ${num(m.arrivals_tonnes)} t` : ""} · {shortDate(m.date)}
+                    </span>
+                  </span>
+                  <span className="text-right">
+                    <span className="block text-[17px] font-semibold tabular-nums">{inr(m.modal_price)}</span>
+                    <span className="block text-[12px] tabular-nums" style={{ color: m.change_7d_pct == null ? undefined : m.change_7d_pct >= 0 ? "var(--green)" : "var(--red)" }}>
+                      {pct(m.change_7d_pct)}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+            {/* Tablets and up: full table */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[720px] text-[14px]">
                 <thead>
                   <tr className="text-left text-[12px] text-label-2">
                     <th className="px-5 py-2 font-medium">Mandi</th>

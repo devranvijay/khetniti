@@ -78,7 +78,7 @@ function DashboardBody({ d, onRetry }: { d: Dashboard; onRetry: () => void }) {
                 Today&apos;s outlook · example for 20 quintals
                 {d.advice.provenance.mode === "demo" && <span className="rounded-full bg-[#FF9500] px-2 py-0.5 text-[11px] font-semibold text-white">DEMO DATA</span>}
               </div>
-              <h2 className="mt-2 text-[28px] font-bold leading-tight tracking-[-0.02em]">{d.advice.headline}</h2>
+              <h2 className="mt-2 text-[22px] font-bold leading-tight tracking-[-0.02em] sm:text-[28px]">{d.advice.headline}</h2>
               <p className="mt-2 text-[15px] text-white/75">{d.advice.reasons[0]}</p>
               <Link href="/advisor" className="mt-4 inline-flex items-center gap-1 rounded-full bg-white/15 px-4 py-2 text-[14px] font-semibold backdrop-blur transition hover:bg-white/25">
                 Use my quantity and costs <ChevronRight className="size-4" />
@@ -86,7 +86,7 @@ function DashboardBody({ d, onRetry }: { d: Dashboard; onRetry: () => void }) {
             </div>
             <div className="sm:text-right">
               <div className="text-[13px] text-white/70">Estimated net revenue</div>
-              <div className="text-[40px] font-bold tracking-[-0.03em] text-[#F2BB3C]">{inr(d.advice.estimated_net.net)}</div>
+              <div className="text-[32px] font-bold tracking-[-0.03em] text-[#F2BB3C] sm:text-[40px]">{inr(d.advice.estimated_net.net)}</div>
               <div className="text-[13px] text-white/70">Confidence: {d.advice.confidence}</div>
             </div>
           </div>
@@ -148,7 +148,7 @@ function DashboardBody({ d, onRetry }: { d: Dashboard; onRetry: () => void }) {
 
       <div className="grid gap-5 xl:grid-cols-5">
         {/* Weather */}
-        <Card className="xl:col-span-3">
+        <Card className="min-w-0 xl:col-span-3">
           <CardTitle title="7-day forecast" subtitle="Rain and temperature drive harvest timing">
             <Link href="/harvest" className="inline-flex items-center gap-0.5 text-[14px] font-medium text-tint">
               Details <ArrowUpRight className="size-4" />
@@ -177,7 +177,7 @@ function DashboardBody({ d, onRetry }: { d: Dashboard; onRetry: () => void }) {
         </Card>
 
         {/* Mandi snapshot */}
-        <div className="space-y-2 xl:col-span-2">
+        <div className="min-w-0 space-y-2 xl:col-span-2">
           <div className="flex items-end justify-between px-1">
             <h3 className="text-[17px] font-semibold">Highest modal prices</h3>
             {d.prices && <ProvenanceBadge p={d.prices.provenance} />}
