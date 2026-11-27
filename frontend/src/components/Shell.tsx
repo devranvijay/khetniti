@@ -6,11 +6,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { Calculator, ChartLine, CloudSun, FileText, History, House, MapPin, Monitor, Moon, Sun } from "lucide-react";
 import { useApp, type ThemePref } from "./AppContext";
 import { BrandLogo } from "./Brand";
-import { Segmented, Select } from "./ui";
+import { ErrorBox, Segmented, Select } from "./ui";
 import { useTrackSelect } from "./useTrackSelect";
 
 const NAV = [
-  { href: "/", label: "Dashboard", short: "Home", icon: House, color: "#1E6B4B" },
+  { href: "/dashboard", label: "Dashboard", short: "Home", icon: House, color: "#1E6B4B" },
   { href: "/harvest", label: "Harvest Intelligence", short: "Harvest", icon: CloudSun, color: "#007AFF" },
   { href: "/mandi", label: "Mandi Intelligence", short: "Mandi", icon: ChartLine, color: "#E9AC27" },
   { href: "/advisor", label: "Smart Sell Advisor", short: "Sell", icon: Calculator, color: "#34C759" },
@@ -18,7 +18,7 @@ const NAV = [
   { href: "/reports", label: "Reports & Insights", short: "Reports", icon: FileText, color: "#8E8E93" },
 ];
 
-const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+const isActive = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
 /** Sidebar rows are a fixed height so the selection pill can slide between them. */
 const NAV_ROW_PX = 36;
@@ -147,7 +147,7 @@ function CropAndPlace() {
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { metaError } = useApp();
+  const { metaError, retryMeta } = useApp();
   const activeIndex = NAV.findIndex((n) => isActive(pathname, n.href));
   const current = NAV[activeIndex];
   const scrolled = useScrolled();
@@ -156,7 +156,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-dvh">
       {/* macOS-style translucent sidebar (desktop): the heaviest material, it carries structure */}
       <aside className="no-print material-sidebar sticky top-0 hidden h-dvh w-[248px] shrink-0 flex-col border-r border-separator px-3 pb-4 pt-5 lg:flex">
-        <Link href="/" className="mb-6 block px-2" aria-label="KHETNITI home">
+        <Link href="/" className="mb-6 block px-2" aria-label="KHETNITI home page">
           <div className="flex flex-col items-start">
             <BrandLogo variant="lockup" className="h-[38px]" priority />
             <BrandLogo variant="hindi" className="-mt-0.5 h-[16px] pl-[33px] opacity-85" />
@@ -208,7 +208,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           className={`no-print material-bar sticky top-0 z-20 border-b pt-[env(safe-area-inset-top)] transition-[border-color] duration-300 ${scrolled ? "border-separator" : "border-transparent"}`}
         >
           <div className="mx-auto flex max-w-[1240px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 md:px-8">
-            <Link href="/" className="flex min-w-0 items-center gap-2 lg:hidden" aria-label="KHETNITI home">
+            <Link href="/" className="flex min-w-0 items-center gap-2 lg:hidden" aria-label="KHETNITI home page">
               <BrandLogo variant="mark" className="h-7" priority />
               <span className="truncate text-17 font-semibold">{current?.label ?? "KHETNITI"}</span>
             </Link>
@@ -228,8 +228,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
         <main className="print-full mx-auto w-full max-w-[1240px] flex-1 px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-5 md:px-8 md:pt-8 lg:pb-12">
           {metaError && (
-            <div className="mb-4 rounded-[12px] p-3 text-13 text-red" style={{ background: "color-mix(in srgb, var(--red) 10%, transparent)" }}>
-              {metaError}
+            <div className="mb-4">
+              <ErrorBox message={`${metaError} Retrying automatically…`} onRetry={retryMeta} />
             </div>
           )}
           <div key={pathname} className="enter">

@@ -11,6 +11,7 @@ type Ctx = {
   setTheme: (t: ThemePref) => void;
   meta: Meta | null;
   metaError: string | null;
+  retryMeta: () => void;
   crop: string;
   location: string;
   setCrop: (c: string) => void;
@@ -19,6 +20,7 @@ type Ctx = {
 
 const AppCtx = createContext<Ctx | null>(null);
 const KEY = "khetniti.selection";
+const META_RETRY_MS = 5000;
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -37,10 +39,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const t = localStorage.getItem(THEME_KEY);
       if (t === "light" || t === "dark") setThemeState(t);
     } catch {}
-    api<Meta>("/api/meta")
-      .then(setMeta)
-      .catch((e) => setMetaError(e.message));
   }, []);
+
+  // Crops, locations and mandis. If the server is unreachable (e.g. restarting), keep retrying quietly
+  // so the app recovers on its own; the banner's Retry button triggers an immediate attempt.
+  const [metaAttempt, setMetaAttempt] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    let timer: number | undefined;
+    api<Meta>("/api/meta")
+      .then((m) => {
+        if (!alive) return;
+        setMeta(m);
+        setMetaError(null);
+      })
+      .catch((e: Error) => {
+        if (!alive) return;
+        setMetaError(e.message);
+        timer = window.setTimeout(() => setMetaAttempt((a) => a + 1), META_RETRY_MS);
+      });
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+    };
+  }, [metaAttempt]);
+  const retryMeta = () => setMetaAttempt((a) => a + 1);
 
   const persist = (c: string, l: string) => {
     try {
@@ -69,7 +92,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     persist(crop, l);
   };
 
-  return <AppCtx.Provider value={{ theme, setTheme, meta, metaError, crop, location, setCrop, setLocation }}>{children}</AppCtx.Provider>;
+  return <AppCtx.Provider value={{ theme, setTheme, meta, metaError, retryMeta, crop, location, setCrop, setLocation }}>{children}</AppCtx.Provider>;
 }
 
 export function useApp() {

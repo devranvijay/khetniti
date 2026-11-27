@@ -1,6 +1,8 @@
 const inrFmt = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
 
-export const inr = (v: number | null | undefined) => (v == null || Number.isNaN(v) ? "—" : `₹${inrFmt.format(Math.round(v))}`);
+/** Negative amounts read "−₹1,200", not "₹-1,200". */
+export const inr = (v: number | null | undefined) =>
+  v == null || Number.isNaN(v) ? "—" : `${Math.round(v) < 0 ? "−" : ""}₹${inrFmt.format(Math.abs(Math.round(v)))}`;
 export const num = (v: number | null | undefined, digits = 0) =>
   v == null || Number.isNaN(v) ? "—" : new Intl.NumberFormat("en-IN", { maximumFractionDigits: digits, minimumFractionDigits: digits }).format(v);
 export const pct = (v: number | null | undefined, digits = 1) => (v == null ? "—" : `${v > 0 ? "+" : ""}${v.toFixed(digits)}%`);

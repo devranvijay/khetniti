@@ -1,8 +1,11 @@
 import json
+import logging
 from datetime import date, datetime
+from typing import Annotated
 
-from fastapi import FastAPI, Header, HTTPException, Query
+from fastapi import FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import desc, insert, select
 
@@ -13,7 +16,22 @@ from .services import prices, risk, weather
 from .services.advisor import advise
 from .services.replay import ReplayError, backtest, replay, replay_window
 
+log = logging.getLogger("khetniti")
+
 app = FastAPI(title="KHETNITI API", version="0.1.0")
+
+
+# Registered before CORS so it sits inside it: an unexpected crash still returns JSON with CORS headers,
+# and the browser shows this message instead of a misleading "cannot reach the server".
+@app.middleware("http")
+async def _unexpected_errors(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception:
+        log.exception("Unhandled error on %s %s", request.method, request.url.path)
+        return JSONResponse(status_code=500, content={"detail": "Something went wrong on the KHETNITI server. Please try again in a moment."})
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],
@@ -155,7 +173,7 @@ class AdviceIn(BaseModel):
     quantity_q: float = Field(20, gt=0, le=100000)
     local_mandi: str | None = None
     transport_rate_per_q_km: float = Field(1.0, ge=0, le=100)
-    transport_overrides: dict[str, float] | None = None
+    transport_overrides: dict[str, Annotated[float, Field(ge=0, le=10_000_000)]] | None = None
     handling_per_q: float = Field(10, ge=0, le=10000)
     fee_pct: float = Field(0, ge=0, le=50)
     spoilage_pct_per_day: float | None = Field(None, ge=0, le=50)

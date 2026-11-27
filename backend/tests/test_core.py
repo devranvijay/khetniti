@@ -1,3 +1,4 @@
+import re
 from datetime import date
 
 import pytest
@@ -32,6 +33,34 @@ def test_advice_options_are_internally_consistent():
         assert o["net"] == pytest.approx(o["gross"] - o["transport"] - o["handling"] - o["market_fee"] - o["storage"])
     assert a["best_now"]["net"] == max(o["net"] for o in a["options"] if not o["stale"])
     assert a["provenance"]["mode"] == "historical"
+
+
+def test_advice_says_plainly_when_every_mandi_loses_money():
+    a = advise("tomato", 20, "nashik", handling_per_q=10000, cutoff=date(2025, 6, 2))
+    assert a["ok"] and a["estimated_net"]["net"] < 0
+    assert a["headline"] == "No mandi covers your costs right now"
+    assert a["action"] == "SELL_NOW" and a["wait_days"] == 0
+    assert "loses money" in a["reasons"][0]
+
+
+def test_advice_reasons_never_quote_impossible_percentages():
+    extreme_wait = {"spoilage_pct_per_day": 50, "storage_cost_per_q_day": 1000}  # waiting certainly loses money
+    for kwargs in (extreme_wait, {"spoilage_pct_per_day": 50}, {"storage_cost_per_q_day": 1000}, {"handling_per_q": 10000}, {}):
+        a = advise("tomato", 20, "nashik", cutoff=date(2025, 6, 2), **kwargs)
+        text = " ".join(a["reasons"])
+        assert all(float(p) <= 100 for p in re.findall(r"(\d+(?:\.\d+)?)%", text)), text
+        assert "only -" not in text, text
+
+
+def test_advisor_api_rejects_negative_transport_fare_and_unknown_crop():
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    c = TestClient(app)
+    r = c.post("/api/advisor", json={"crop": "tomato", "location": "nashik", "quantity_q": 20, "transport_overrides": {"nashik": -500}})
+    assert r.status_code == 422
+    assert c.post("/api/advisor", json={"crop": "rice"}).status_code == 400
 
 
 def test_cutoff_excludes_future_rows():

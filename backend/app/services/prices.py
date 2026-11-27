@@ -96,7 +96,8 @@ def load_frame(
     market_ids: list[str] | None = None,
 ) -> pd.DataFrame:
     t = mandi_prices
-    conds = [t.c.commodity == commodity, t.c.is_demo == is_demo]
+    # A zero or negative modal price is a bad feed row; it would break the log-price trend and every net figure.
+    conds = [t.c.commodity == commodity, t.c.is_demo == is_demo, t.c.modal_price > 0]
     if cutoff is not None:
         conds.append(t.c.date <= cutoff)
     if start is not None:

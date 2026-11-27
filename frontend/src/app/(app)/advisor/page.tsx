@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bookmark, Check, CircleCheck, Sparkles } from "lucide-react";
+import { Bookmark, CalendarClock, Check, CircleCheck, RefreshCw, Sparkles } from "lucide-react";
 import { useApi, useApp } from "@/components/AppContext";
 import {
   Badge,
@@ -21,7 +21,7 @@ import {
   Select,
   SourceFootnote,
 } from "@/components/ui";
-import { post, type Advice, type LatestPrices } from "@/lib/api";
+import { ApiError, post, type Advice, type LatestPrices } from "@/lib/api";
 import { inr, longDate, num } from "@/lib/format";
 
 type Form = {
@@ -36,6 +36,33 @@ type Form = {
 };
 
 const n = (s: string) => (s.trim() === "" ? null : Number(s));
+
+/** The same limits the server enforces, checked as you type so a request never bounces back. */
+const LIMITS: Partial<Record<keyof Form, { max: number; required?: boolean }>> = {
+  quantity_q: { max: 100000, required: true },
+  transport_rate_per_q_km: { max: 100 },
+  local_transport: { max: 10_000_000 },
+  handling_per_q: { max: 10000 },
+  fee_pct: { max: 50 },
+  spoilage_pct_per_day: { max: 50 },
+  storage_cost_per_q_day: { max: 1000 },
+};
+
+function validate(form: Form): Partial<Record<keyof Form, string>> {
+  return Object.fromEntries(
+    (Object.keys(LIMITS) as (keyof Form)[]).flatMap((k) => {
+      const lim = LIMITS[k]!;
+      const raw = form[k].trim();
+      if (raw === "") return lim.required ? [[k, "Enter how many quintals you have"]] : [];
+      const v = Number(raw);
+      if (!Number.isFinite(v)) return [[k, "Enter a number"]];
+      if (v < 0) return [[k, "Can’t be negative"]];
+      if (lim.required && v === 0) return [[k, "Must be more than 0"]];
+      if (v > lim.max) return [[k, `Must be ${num(lim.max)} or less`]];
+      return [];
+    }),
+  );
+}
 
 export default function AdvisorPage() {
   const { crop, location } = useApp();
@@ -58,21 +85,34 @@ function Advisor() {
     storage_cost_per_q_day: "",
   });
   const [advice, setAdvice] = useState<Advice | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ message: string; retry: boolean } | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [ranWith, setRanWith] = useState<string | null>(null);
   const [runs, setRuns] = useState(0);
 
   const localMandi = form.local_mandi || latest.data?.local_mandi || "";
   const set = (k: keyof Form) => (e: { target: { value: string } }) => setForm({ ...form, [k]: e.target.value });
 
   const qty = n(form.quantity_q);
-  const valid = qty != null && qty > 0 && [form.transport_rate_per_q_km, form.handling_per_q, form.fee_pct].every((v) => v === "" || Number(v) >= 0);
+  const errors = validate(form);
+  const valid = Object.keys(errors).length === 0;
+  // The result on screen belongs to the inputs it was calculated from; flag it once they change.
+  const formKey = JSON.stringify({ ...form, local_mandi: localMandi });
+  const outdated = advice != null && ranWith !== formKey;
+  const input = (k: keyof Form) => ({
+    value: form[k],
+    onChange: set(k),
+    "aria-invalid": errors[k] ? true : undefined,
+    className: `${inputCls} ${errors[k] ? "ring-2 ring-red/50" : ""}`,
+  });
 
   async function run() {
+    if (!valid || busy) return;
     setBusy(true);
     setError(null);
-    setSaved(false);
+    setNotice(null);
+    const key = formKey;
     try {
       const overrides = n(form.local_transport) != null && localMandi ? { [localMandi]: n(form.local_transport)! } : null;
       const res = await post<Advice>("/api/advisor", {
@@ -87,11 +127,17 @@ function Advisor() {
         spoilage_pct_per_day: n(form.spoilage_pct_per_day),
         storage_cost_per_q_day: n(form.storage_cost_per_q_day),
       });
-      if (!res.ok) setError(res.message ?? "No recommendation could be made.");
-      setAdvice(res.ok ? res : null);
-      setRuns((r) => r + 1);
+      if (res.ok) {
+        setAdvice(res);
+        setRanWith(key);
+        setRuns((r) => r + 1);
+      } else {
+        setAdvice(null);
+        setNotice(res.message ?? "No recommendation could be made from the prices available right now.");
+      }
     } catch (e) {
-      setError((e as Error).message);
+      const status = e instanceof ApiError ? e.status : 0;
+      setError({ message: (e as Error).message, retry: status === 0 || status >= 500 });
     } finally {
       setBusy(false);
     }
@@ -117,7 +163,6 @@ function Advisor() {
         source: advice.provenance.source,
       },
     });
-    setSaved(true);
   }
 
   return (
@@ -126,15 +171,23 @@ function Advisor() {
 
       <div className="grid gap-6 xl:grid-cols-[340px_1fr]">
         {/* Inputs: two columns on tablets, a sidebar column on wide screens */}
-        <div className="grid content-start gap-4 md:grid-cols-2 xl:grid-cols-1">
+        <form
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            run();
+          }}
+          className="grid content-start gap-4 md:grid-cols-2 xl:grid-cols-1"
+        >
           <Card>
             <CardTitle title="Your harvest" />
             <div className="space-y-3.5">
-              <Field label="Quantity (quintals)" hint="1 quintal = 100 kg">
-                <input type="number" inputMode="decimal" min={0} className={inputCls} value={form.quantity_q} onChange={set("quantity_q")} />
+              <Field label="Quantity (quintals)" hint="1 quintal = 100 kg" error={errors.quantity_q}>
+                <input type="number" inputMode="decimal" min={0} {...input("quantity_q")} />
               </Field>
               <Field label="Your usual (local) mandi">
                 <Select value={localMandi} onChange={(v) => setForm({ ...form, local_mandi: v })}>
+                  {!latest.data && <option value="">{latest.loading ? "Loading mandis…" : "Nearest mandi (automatic)"}</option>}
                   {(latest.data?.markets ?? []).map((m) => (
                     <option key={m.market_id} value={m.market_id}>
                       {m.market_name} · {m.distance_km} km
@@ -147,51 +200,78 @@ function Advisor() {
           <Card>
             <CardTitle title="Costs" subtitle="Edit to match what you pay" />
             <div className="space-y-3.5">
-              <Field label="Transport rate (₹ per quintal per km)" hint="Applied to the estimated road distance of each mandi">
-                <input type="number" inputMode="decimal" min={0} step="0.1" className={inputCls} value={form.transport_rate_per_q_km} onChange={set("transport_rate_per_q_km")} />
+              <Field label="Transport rate (₹ per quintal per km)" hint="Applied to the estimated road distance of each mandi" error={errors.transport_rate_per_q_km}>
+                <input type="number" inputMode="decimal" min={0} step="0.1" {...input("transport_rate_per_q_km")} />
               </Field>
-              <Field label="Actual transport to local mandi (₹, optional)" hint="If you know the exact fare, it replaces the estimate">
-                <input type="number" inputMode="decimal" min={0} placeholder="Estimate" className={inputCls} value={form.local_transport} onChange={set("local_transport")} />
+              <Field label="Actual transport to local mandi (₹, optional)" hint="If you know the exact fare, it replaces the estimate" error={errors.local_transport}>
+                <input type="number" inputMode="decimal" min={0} placeholder="Estimate" {...input("local_transport")} />
               </Field>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Handling (₹/q)">
-                  <input type="number" inputMode="decimal" min={0} className={inputCls} value={form.handling_per_q} onChange={set("handling_per_q")} />
+                <Field label="Handling (₹/q)" error={errors.handling_per_q}>
+                  <input type="number" inputMode="decimal" min={0} {...input("handling_per_q")} />
                 </Field>
-                <Field label="Market fee (%)">
-                  <input type="number" inputMode="decimal" min={0} className={inputCls} value={form.fee_pct} onChange={set("fee_pct")} />
+                <Field label="Market fee (%)" error={errors.fee_pct}>
+                  <input type="number" inputMode="decimal" min={0} {...input("fee_pct")} />
                 </Field>
-                <Field label="Weight loss (%/day)">
-                  <input type="number" inputMode="decimal" min={0} step="0.1" className={inputCls} value={form.spoilage_pct_per_day} placeholder={cropInfo ? `${cropInfo.spoilage_pct_per_day} (default)` : ""} onChange={set("spoilage_pct_per_day")} />
+                <Field label="Weight loss (%/day)" error={errors.spoilage_pct_per_day}>
+                  <input type="number" inputMode="decimal" min={0} step="0.1" placeholder={cropInfo ? `${cropInfo.spoilage_pct_per_day} (default)` : ""} {...input("spoilage_pct_per_day")} />
                 </Field>
-                <Field label="Storage (₹/q/day)">
-                  <input type="number" inputMode="decimal" min={0} className={inputCls} value={form.storage_cost_per_q_day} placeholder={cropInfo ? `${cropInfo.storage_cost_per_q_day} (default)` : ""} onChange={set("storage_cost_per_q_day")} />
+                <Field label="Storage (₹/q/day)" error={errors.storage_cost_per_q_day}>
+                  <input type="number" inputMode="decimal" min={0} placeholder={cropInfo ? `${cropInfo.storage_cost_per_q_day} (default)` : ""} {...input("storage_cost_per_q_day")} />
                 </Field>
               </div>
             </div>
           </Card>
-          <button className={`${btnPrimary} w-full md:col-span-2 xl:col-span-1`} disabled={!valid || busy} onClick={run}>
-            <Sparkles className="size-4" /> {busy ? "Calculating…" : "Get recommendation"}
+          <button type="submit" className={`${btnPrimary} w-full md:col-span-2 xl:col-span-1`} disabled={!valid || busy}>
+            <Sparkles className={`size-4 ${busy ? "animate-pulse" : ""}`} /> {busy ? "Calculating…" : advice ? "Update recommendation" : "Get recommendation"}
           </button>
-          {latest.error && <ErrorBox message={latest.error} onRetry={latest.reload} />}
-        </div>
+          {!valid && <p className="-mt-2 text-center text-13 text-label-2 md:col-span-2 xl:col-span-1">Fix the highlighted field to continue.</p>}
+          {latest.error && (
+            <div className="md:col-span-2 xl:col-span-1">
+              <ErrorBox message={`Couldn’t load the mandi list: ${latest.error}`} onRetry={latest.reload} />
+            </div>
+          )}
+        </form>
 
         {/* Results */}
-        <div className="min-w-0 space-y-5">
-          {error && <ErrorBox message={error} />}
-          {!advice && !error && (
-            <Card className="grid min-h-[320px] place-items-center text-center">
-              <div className="max-w-sm">
-                <div className="mx-auto mb-3 grid size-14 place-items-center rounded-[16px] bg-tint/12 text-tint">
-                  <Sparkles className="size-7" />
+        <div className="min-w-0 space-y-5" aria-live="polite" aria-busy={busy}>
+          {error && <ErrorBox message={error.message} onRetry={error.retry ? run : undefined} />}
+          {notice && (
+            <Card className="grid min-h-[240px] place-items-center text-center">
+              <div className="max-w-md">
+                <div className="mx-auto mb-3 grid size-14 place-items-center rounded-[16px] bg-orange/12 text-orange">
+                  <CalendarClock className="size-7" />
                 </div>
-                <h3 className="text-20 font-semibold">Ready when you are</h3>
-                <p className="mt-1 text-15 text-label-2">Enter your quantity and costs, then tap Get recommendation. Every number in the result shows how it was calculated.</p>
+                <h3 className="text-20 font-semibold">No recommendation right now</h3>
+                <p className="mt-1 text-15 text-label-2">{notice}</p>
+                <p className="mt-2 text-13 text-label-3">Mandi prices refresh daily from AGMARKNET. Try again later or choose another crop.</p>
               </div>
             </Card>
           )}
+          {!advice && !error && !notice && (
+            <Card className="grid min-h-[320px] place-items-center text-center">
+              <div className="max-w-sm">
+                <div className="mx-auto mb-3 grid size-14 place-items-center rounded-[16px] bg-tint/12 text-tint">
+                  <Sparkles className={`size-7 ${busy ? "animate-pulse" : ""}`} />
+                </div>
+                <h3 className="text-20 font-semibold">{busy ? "Comparing every mandi…" : "Ready when you are"}</h3>
+                <p className="mt-1 text-15 text-label-2">
+                  {busy ? "Checking today’s prices, transport and the weather." : "Enter your quantity and costs, then tap Get recommendation. Every number in the result shows how it was calculated."}
+                </p>
+              </div>
+            </Card>
+          )}
+          {advice && outdated && !busy && (
+            <div className="enter flex flex-wrap items-center justify-between gap-3 rounded-[14px] px-4 py-3 text-14" style={{ background: "color-mix(in srgb, var(--blue) 10%, transparent)" }}>
+              <span>You changed your inputs. This result is for the previous values.</span>
+              <button type="button" onClick={run} disabled={!valid} className={btnTinted}>
+                <RefreshCw className="size-3.5" /> Update
+              </button>
+            </div>
+          )}
           {advice && (
-            <div key={runs} className="enter space-y-5">
-              <AdviceResult a={advice} onSave={save} saved={saved} />
+            <div key={runs} className={`enter space-y-5 transition-opacity duration-200 ${outdated || busy ? "opacity-50" : ""}`}>
+              <AdviceResult a={advice} onSave={save} />
             </div>
           )}
         </div>
@@ -200,8 +280,35 @@ function Advisor() {
   );
 }
 
-function AdviceResult({ a, onSave, saved }: { a: Advice; onSave: () => void; saved: boolean }) {
+function SaveButton({ onSave }: { onSave: () => Promise<void> }) {
+  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  async function save() {
+    setState("saving");
+    try {
+      await onSave();
+      setState("saved");
+    } catch {
+      setState("error");
+    }
+  }
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <button type="button" className={btnTinted} onClick={save} disabled={state === "saving" || state === "saved"}>
+        {state === "saved" ? <Check className="size-4" /> : <Bookmark className="size-4" />}
+        {state === "saved" ? "Saved to Reports" : state === "saving" ? "Saving…" : state === "error" ? "Try saving again" : "Save to Reports"}
+      </button>
+      {state === "error" && (
+        <span className="text-12 text-red" role="alert">
+          Couldn’t save. Check your connection and try again.
+        </span>
+      )}
+    </div>
+  );
+}
+
+function AdviceResult({ a, onSave }: { a: Advice; onSave: () => Promise<void> }) {
   const decision = a.action === "WAIT" ? a.scenarios.find((s) => s.days === a.wait_days)!.expected : a.best_now;
+  const losing = a.estimated_net.net < 0;
   return (
     <>
       <HeroCard>
@@ -214,8 +321,8 @@ function AdviceResult({ a, onSave, saved }: { a: Advice; onSave: () => void; sav
             <div className="mt-3 inline-flex rounded-full bg-white/15 px-3 py-1 text-13 font-medium">Confidence: {a.confidence}</div>
           </div>
           <div className="sm:text-right">
-            <div className="text-13 text-white/70">Estimated net revenue</div>
-            <div className="text-32 font-bold text-[#F2BB3C] sm:text-40">{inr(a.estimated_net.net)}</div>
+            <div className="text-13 text-white/70">{losing ? "Estimated loss at the best mandi" : "Estimated net revenue"}</div>
+            <div className={`text-32 font-bold sm:text-40 ${losing ? "text-[#FFB4A8]" : "text-[#F2BB3C]"}`}>{inr(a.estimated_net.net)}</div>
             {a.action === "WAIT" && (
               <div className="text-13 text-white/70">
                 80% range {inr(a.estimated_net.low)} – {inr(a.estimated_net.high)}
@@ -316,9 +423,14 @@ function AdviceResult({ a, onSave, saved }: { a: Advice; onSave: () => void; sav
                     <td className="px-3 py-3 text-right tabular-nums text-label-2">−{inr(o.transport)}</td>
                     <td className="px-3 py-3 text-right tabular-nums text-label-2">−{inr(o.handling + o.market_fee)}</td>
                     <td className="px-3 py-3 text-right font-semibold tabular-nums">{inr(o.net)}</td>
-                    <td className="px-5 py-3 text-right tabular-nums" style={{ color: a.local && o.net - a.local.net >= 0 ? "var(--green)" : "var(--red)" }}>
-                      {a.local ? (o.market_id === a.local.market_id ? "—" : `${o.net - a.local.net >= 0 ? "+" : "−"}${inr(Math.abs(o.net - a.local.net))}`) : "—"}
-                    </td>
+                    {a.local && o.market_id !== a.local.market_id ? (
+                      <td className="px-5 py-3 text-right tabular-nums" style={{ color: o.net - a.local.net >= 0 ? "var(--green)" : "var(--red)" }}>
+                        {o.net - a.local.net >= 0 ? "+" : "−"}
+                        {inr(Math.abs(o.net - a.local.net))}
+                      </td>
+                    ) : (
+                      <td className="px-5 py-3 text-right text-label-3">—</td>
+                    )}
                   </tr>
                 );
               })}
@@ -378,9 +490,7 @@ function AdviceResult({ a, onSave, saved }: { a: Advice; onSave: () => void; sav
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SourceFootnote p={a.provenance} />
-        <button className={btnTinted} onClick={onSave} disabled={saved}>
-          {saved ? <Check className="size-4" /> : <Bookmark className="size-4" />} {saved ? "Saved to Reports" : "Save to Reports"}
-        </button>
+        <SaveButton onSave={onSave} />
       </div>
     </>
   );

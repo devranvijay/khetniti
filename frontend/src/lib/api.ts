@@ -20,14 +20,44 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError(`Cannot reach the KHETNITI server at ${API_URL}. Is the backend running?`, 0);
   }
   if (!res.ok) {
-    let detail = res.statusText;
+    let detail: unknown = null;
     try {
-      const body = await res.json();
-      detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail);
+      detail = (await res.json()).detail;
     } catch {}
-    throw new ApiError(detail, res.status);
+    throw new ApiError(describeError(detail, res.status), res.status);
   }
   return res.json() as Promise<T>;
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  quantity_q: "Quantity",
+  transport_rate_per_q_km: "Transport rate",
+  transport_overrides: "Transport fare",
+  handling_per_q: "Handling cost",
+  fee_pct: "Market fee",
+  spoilage_pct_per_day: "Weight loss",
+  storage_cost_per_q_day: "Storage cost",
+  step_days: "Step",
+  as_of: "Date",
+  start: "Start date",
+  end: "End date",
+};
+
+/** Turns a FastAPI error body into one plain sentence (validation errors arrive as a list of field problems). */
+export function describeError(detail: unknown, status: number): string {
+  if (typeof detail === "string" && detail) return detail;
+  if (Array.isArray(detail) && detail.length) {
+    return detail
+      .map((d: { loc?: (string | number)[]; msg?: string }) => {
+        const key = d.loc?.find((k): k is string => typeof k === "string" && k in FIELD_LABELS);
+        const label = key ? FIELD_LABELS[key] : "A value";
+        const msg = d.msg ?? "is not valid";
+        return `${msg.startsWith("Input") ? msg.replace(/^Input/, label) : `${label}: ${msg}`}.`;
+      })
+      .join(" ");
+  }
+  if (status >= 500) return "The KHETNITI server had a problem. Please try again in a moment.";
+  return `Request failed (${status}).`;
 }
 
 export const post = <T,>(path: string, body: unknown) => api<T>(path, { method: "POST", body: JSON.stringify(body) });

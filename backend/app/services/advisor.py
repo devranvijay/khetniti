@@ -177,9 +177,16 @@ def advise(
     action, chosen = "SELL_NOW", None
     best_wait = max(scenarios, key=lambda s: s["expected"]["net"]) if scenarios else None
     perishable_block = risk_level == "High" and not cfg["storable"]
-    if best_wait:
-        gain = best_wait["expected"]["net"] / best_now["net"] - 1 if best_now["net"] > 0 else 0
-        downside = 1 - best_wait["net_low"] / best_now["net"] if best_now["net"] > 0 else 1
+    losing = best_now["net"] <= 0
+    if losing:
+        # Ratios against a zero or negative net are meaningless, so say plainly what is wrong instead.
+        reasons.append(
+            f"At every mandi the costs (transport, handling, fees) are more than the sale value, so selling now loses money. "
+            f"{best_now['market_name']} loses the least (₹{-best_now['net']:,.0f}). Check your cost entries or try a lower transport rate."
+        )
+    elif best_wait:
+        gain = best_wait["expected"]["net"] / best_now["net"] - 1
+        downside = 1 - best_wait["net_low"] / best_now["net"]
         if gain >= WAIT_GAIN_REQUIRED and downside <= WAIT_DOWNSIDE_LIMIT and not perishable_block:
             action, chosen = "WAIT", best_wait
             reasons.append(
@@ -191,10 +198,18 @@ def advise(
             )
         else:
             why = []
-            if gain < WAIT_GAIN_REQUIRED:
-                why.append(f"the expected gain from waiting is only {gain * 100:+.1f}% (needs ≥ {WAIT_GAIN_REQUIRED * 100:.0f}%)")
-            if downside > WAIT_DOWNSIDE_LIMIT:
-                why.append(f"the downside is up to {downside * 100:.1f}% below selling now (limit {WAIT_DOWNSIDE_LIMIT * 100:.0f}%)")
+            wait_loses = best_wait["expected"]["net"] <= 0
+            if wait_loses:
+                why.append(f"waiting {best_wait['days']} days would not cover its weight loss and storage costs")
+            elif gain < 0:
+                why.append(f"waiting {best_wait['days']} days is expected to earn {-gain * 100:.1f}% less than selling today")
+            elif gain < WAIT_GAIN_REQUIRED:
+                why.append(f"waiting would add only {gain * 100:.1f}% (at least {WAIT_GAIN_REQUIRED * 100:.0f}% is needed to be worth the risk)")
+            # When waiting loses money outright, the poor case adds nothing, so it is only described otherwise.
+            if not wait_loses and downside >= 1:
+                why.append("in a poor case waiting would not even cover its costs")
+            elif not wait_loses and downside > WAIT_DOWNSIDE_LIMIT:
+                why.append(f"in a poor case waiting earns {downside * 100:.1f}% less than selling now (the limit is {WAIT_DOWNSIDE_LIMIT * 100:.0f}%)")
             if perishable_block:
                 why.append("weather risk is High and the crop cannot be stored")
             reasons.append("Selling now is preferred because " + " and ".join(why) + ".")
@@ -203,10 +218,15 @@ def advise(
 
     if local and best_now["market_id"] != local["market_id"]:
         diff = best_now["net"] - local["net"]
-        reasons.append(
-            f"{best_now['market_name']} pays ₹{best_now['price_per_q'] - local['price_per_q']:,.0f}/q more than {local['market_name']}; "
-            f"after the extra transport you keep ₹{diff:,.0f} more."
-        )
+        pdiff = best_now["price_per_q"] - local["price_per_q"]
+        if pdiff >= 0:
+            reasons.append(
+                f"{best_now['market_name']} pays ₹{pdiff:,.0f}/q more than {local['market_name']}; after transport and costs you keep ₹{diff:,.0f} more."
+            )
+        else:
+            reasons.append(
+                f"{best_now['market_name']} pays ₹{-pdiff:,.0f}/q less than {local['market_name']}, but lower transport and costs leave you ₹{diff:,.0f} more."
+            )
     elif local:
         reasons.append(f"Your local mandi, {local['market_name']}, gives the highest net after transport.")
     if trend:
@@ -234,7 +254,11 @@ def advise(
     else:
         confidence = "Medium"
 
-    if action == "SELL_NOW":
+    if losing:
+        headline = "No mandi covers your costs right now"
+        est = {"net": best_now["net"], "low": best_now["net"], "high": best_now["net"]}
+        decision_market = best_now["market_id"]
+    elif action == "SELL_NOW":
         headline = f"Sell now at {best_now['market_name']}"
         est = {"net": best_now["net"], "low": best_now["net"], "high": best_now["net"]}
         decision_market = best_now["market_id"]

@@ -265,12 +265,18 @@ export function Segmented<T extends string | number>({
   );
 }
 
-export function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+export function Field({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: React.ReactNode }) {
   return (
     <label className="block">
       <span className="text-13 font-medium text-label-2">{label}</span>
       <div className="mt-1">{children}</div>
-      {hint && <span className="mt-1 block text-12 text-label-3">{hint}</span>}
+      {error ? (
+        <span className="mt-1 block text-12 font-medium text-red" role="alert">
+          {error}
+        </span>
+      ) : (
+        hint && <span className="mt-1 block text-12 text-label-3">{hint}</span>
+      )}
     </label>
   );
 }
